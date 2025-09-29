@@ -1,7 +1,7 @@
 import React from "react";
 import { motion, type Variants } from "framer-motion";
 import { FiUserPlus, FiEdit, FiSend } from "react-icons/fi";
-import signUpImage from "../../assets/signup.png";
+import signUpImage from "../../assets/signUp.png";
 import editorImage from "../../assets/Analytics.png";
 import analyticsImage from "../../assets/dashboard.png";
 
