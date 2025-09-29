@@ -71,7 +71,7 @@ const JournalistDashboard: React.FC = () => {
   const [previewRelease, setPreviewRelease] = useState<PressRelease | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [pressReleases, setPressReleases] = useState<PressRelease[]>([]);
-  const [analyticsData, setAnalyticsData] = useState<AnalyticsData>({
+  const [analyticsData] = useState<AnalyticsData>({
     totalViews: 0,
     mediaPickups: 0,
     engagementRate: 0,
