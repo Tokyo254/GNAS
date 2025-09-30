@@ -23,50 +23,55 @@ const Login: React.FC = () => {
   }, []);
 
   const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!email || !password) { // Removed role check
-      setError("Email and password are required.");
-      addToast("Please fill in email and password", "error");
-      return;
-    }
-    
-    setIsLoading(true);
-    setError("");
-    
-    try {
-      const response = await fetch('http://localhost:5000/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email, 
-          password,
-        }),
-      });
+  e.preventDefault();
+  
+  if (!email || !password) {
+    setError("Email and password are required.");
+    addToast("Please fill in email and password", "error");
+    return;
+  }
+  
+  setIsLoading(true);
+  setError("");
+  
+  try {
+    const response = await fetch('http://localhost:5000/api/auth/login', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email, 
+        password,
+      }),
+    });
 
-      const data = await response.json();
+    const data = await response.json();
+    
+    console.log('Login response:', data); 
+    
+    if (data.success && data.data) {
+      addToast("Login successful!", "success");
+      login(data.data.token, data.data.refreshToken, data.data.user, (path) => {
+        navigate(path);
+      });
+    } else {
+      // More specific error messages
+      const errorMessage = data.message || 'Login failed';
+      setError(errorMessage);
+      addToast(errorMessage, "error");
       
-      console.log('Login response:', data); 
-      
-      if (data.success && data.data) {
-        addToast("Login successful!", "success");
-        login(data.data.token, data.data.refreshToken, data.data.user, (path) => {
-          navigate(path);
-        });
-      } else {
-        setError(data.message || 'Login failed');
-        addToast(data.message || 'Login failed', "error");
-      }
-    } catch (error) {
-      console.error('Login error:', error);
-      setError('An error occurred during login. Please try again.');
-      addToast('An error occurred during login', "error");
-    } finally {
-      setIsLoading(false);
+      // Log for debugging
+      console.error('Login failed:', data);
     }
-  };
+  } catch (error) {
+    console.error('Login network error:', error);
+    setError('Network error. Please check your connection and try again.');
+    addToast('Network error occurred', "error");
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   // Reusable style for text inputs
   const inputStyle = "w-full border border-gray-600 bg-gray-800/50 rounded-md pl-10 pr-4 py-2.5 text-sm text-gray-200 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500";

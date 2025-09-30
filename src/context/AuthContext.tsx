@@ -57,11 +57,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   }, []);
 
-  const login = (token: string, refreshToken: string, userData: User, redirectCallback: (path: string) => void) => {
-    localStorage.setItem('token', token);
-    localStorage.setItem('refreshToken', refreshToken);
-    localStorage.setItem('user', JSON.stringify(userData));
-    setUser(userData);
+ const login = (token: string, refreshToken: string, userData: User, redirectCallback: (path: string) => void) => {
+  localStorage.setItem('token', token);
+  localStorage.setItem('refreshToken', refreshToken);
+  localStorage.setItem('user', JSON.stringify(userData));
+  setUser(userData);
     
     switch (userData.role) {
       case 'admin':

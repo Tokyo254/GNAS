@@ -66,89 +66,92 @@ const JournalistSignUp: React.FC = () => {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  
+  // Basic validation
+  if (!firstName || !surname || !lastName || !email || !country || !publication || selectedInterests.length === 0) {
+    setError("Please fill out all required fields.");
+    addToast("Please fill out all required fields.", "error");
+    return;
+  }
+
+  // Password validation
+  if (!password || !confirmPassword) {
+    setError("Password and confirmation are required.");
+    addToast("Password and confirmation are required.", "error");
+    return;
+  }
+
+  if (password !== confirmPassword) {
+    setError("Passwords do not match.");
+    addToast("Passwords do not match.", "error");
+    return;
+  }
+
+  if (password.length < 6) {
+    setError("Password must be at least 6 characters.");
+    addToast("Password must be at least 6 characters.", "error");
+    return;
+  }
+
+  if (!licenseFile) {
+    setError("License upload is required.");
+    addToast("License upload is required.", "error");
+    return;
+  }
+  
+  setIsLoading(true);
+  setError("");
+
+  try {
+    // Prepare form data for file upload
+    const formData = new FormData();
+    formData.append("firstName", firstName);
+    formData.append("surname", surname);
+    formData.append("lastName", lastName);
+    formData.append("email", email);
+    formData.append("phoneNumber", phoneNumber);
+    formData.append("country", country);
+    formData.append("publication", publication);
+    formData.append("password", password);
+    formData.append("confirmPassword", confirmPassword);
+    formData.append("interests", JSON.stringify(selectedInterests));
     
-    // Basic validation
-    if (!firstName || !surname || !lastName || !email || !country || !publication || selectedInterests.length === 0) {
-      setError("Please fill out all required fields.");
-      addToast("Please fill out all required fields.", "error");
-      return;
+    if (licenseFile) {
+      formData.append("license", licenseFile);
     }
 
-    // Password validation
-    if (!password || !confirmPassword) {
-      setError("Password and confirmation are required.");
-      addToast("Password and confirmation are required.", "error");
-      return;
-    }
+    console.log('Sending journalist registration...');
 
-    if (password !== confirmPassword) {
-      setError("Passwords do not match.");
-      addToast("Passwords do not match.", "error");
-      return;
-    }
+    // Register journalist using fetch
+    const response = await fetch('http://localhost:5000/api/auth/register/journalist', {
+      method: 'POST',
+      body: formData,
+    });
 
-    if (password.length < 6) {
-      setError("Password must be at least 6 characters.");
-      addToast("Password must be at least 6 characters.", "error");
-      return;
-    }
+    const data = await response.json();
+    console.log('Journalist registration response:', data);
 
-    if (!licenseFile) {
-      setError("License upload is required.");
-      addToast("License upload is required.", "error");
-      return;
-    }
-    
-    setIsLoading(true);
-    setError("");
-
-    try {
-      // Prepare form data for file upload
-      const formData = new FormData();
-      formData.append("firstName", firstName);
-      formData.append("surname", surname);
-      formData.append("lastName", lastName);
-      formData.append("email", email);
-      formData.append("phoneNumber", phoneNumber);
-      formData.append("country", country);
-      formData.append("publication", publication);
-      formData.append("password", password);
-      formData.append("confirmPassword", confirmPassword);
-      formData.append("interests", JSON.stringify(selectedInterests));
+    if (data.success) {
+      addToast("Journalist registration successful! Your account is pending verification.", "success");
       
-      if (licenseFile) {
-        formData.append("license", licenseFile);
-      }
-
-      // Register journalist using fetch
-      const response = await fetch('http://localhost:5000/api/auth/register/journalist', {
-        method: 'POST',
-        body: formData,
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        addToast("Journalist registration successful! Your account is pending verification.", "success");
-        
-        // Redirect to login since journalist accounts need verification
-        setTimeout(() => {
-          navigate('/login');
-        }, 2000);
-      } else {
-        setError(data.message);
-        addToast(data.message, "error");
-      }
-    } catch (error) {
-      console.error('Registration error:', error);
-      setError("Network error. Please try again.");
-      addToast("Network error. Please try again.", "error");
-    } finally {
-      setIsLoading(false);
+      // Redirect to login since journalist accounts need verification
+      setTimeout(() => {
+        navigate('/login');
+      }, 2000);
+    } else {
+      setError(data.message);
+      addToast(data.message, "error");
     }
-  };
+  } catch (error) {
+    console.error('Registration error:', error);
+    setError("Network error. Please try again.");
+    addToast("Network error. Please try again.", "error");
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   const inputStyle = "w-full border border-gray-600 bg-gray-800/50 rounded-md p-2.5 text-sm text-gray-200 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500";
 

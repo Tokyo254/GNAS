@@ -106,48 +106,50 @@ const SignUpWizard: React.FC = () => {
     );
   };
 
-  const handleSubmit = async () => {
-    if (!validateStep3()) return;
-    setIsLoading(true);
-    setError("");
-    
-    const fullName = `${firstName} ${surname} ${lastName}`.trim();
+ const handleSubmit = async () => {
+  if (!validateStep3()) return;
+  setIsLoading(true);
+  setError("");
+  
+  try {
+    const response = await fetch('http://localhost:5000/api/auth/register/comms', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        firstName,
+        surname, 
+        lastName,
+        orgEmail,
+        password,
+        confirmPassword,
+        orgName,
+        position,
+        bio,
+        interests: interests, 
+        country,
+        phoneNumber
+      }),
+    });
 
-    try {
-      const response = await fetch('http://localhost:5000/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          fullName,
-          orgEmail,
-          password,
-          orgName,
-          position,
-          bio,
-          interests,
-          country, // NEW: Include country
-          phoneNumber, // NEW: Include phone number
-          registrationMethod: method,
-          ...(method === "endorsement" && { endorserEmail }),
-          ...(method === "invite" && { inviteCode })
-        }),
-      });
+    const data = await response.json();
 
-      if (response.ok) {
-        addToast("Registration successful! Please check your email for verification.", "success");
-        navigate("/login");
-      } else {
-        const errorData = await response.json();
-        setError(errorData.message || "Registration failed. Please try again.");
-        addToast(errorData.message || "Registration failed.", "error");
-      }
-    } catch (error) {
-      setError("Network error. Please check your connection.");
-      addToast("Network error. Please try again.", "error");
-    } finally {
-      setIsLoading(false);
+    if (data.success) {
+      addToast("Registration successful! Please check your email for verification.", "success");
+      navigate("/login");
+    } else {
+      setError(data.message || "Registration failed. Please try again.");
+      addToast(data.message || "Registration failed.", "error");
     }
-  };
+  } catch (error) {
+    console.error('Registration error:', error);
+    setError("Network error. Please check your connection.");
+    addToast("Network error. Please try again.", "error");
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   const inputStyle = "w-full border border-gray-600 bg-gray-800/50 rounded-md p-2.5 text-sm text-gray-200 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500";
   const stepVariants = {
