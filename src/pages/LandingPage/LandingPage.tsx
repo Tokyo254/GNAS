@@ -1,12 +1,15 @@
 import { useState, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import Header from '../../components/header';
-import Hero from './hero';
+import ContentShowcase from './landing';
 import WriteUp from './WriteUp';
 import NewsSection from './NewsFeed';
-import SecondaryHero from './heroSec';
+import DemoSection from './demoSection';
 import Footer from '../../components/footer';
 import PreferencePreloader from '../../components/Preloader';
+import FeaturedItem from './content';
+import Hero from './hero';
+import Featured from './featured';
 
 function LandingPage() {
     // 2. State to control the preloader's visibility
@@ -14,7 +17,7 @@ function LandingPage() {
   useEffect(() => {
     const preloaderCompleted = sessionStorage.getItem('preloaderCompleted');
     if (!preloaderCompleted) {
-      setShowPreloader(true); // Show preloader if it hasn't been completed in this session
+      setShowPreloader(true); 
     }
   }, []);
 
@@ -32,9 +35,12 @@ function LandingPage() {
       <Header />
       <main className="flex-grow">
         <Hero />
+        <ContentShowcase />
+        <FeaturedItem />
         <WriteUp />
-        <NewsSection title="News Updates" />
-        <SecondaryHero />
+        <Featured />
+        <ContentShowcase />
+        <DemoSection />
         <NewsSection title="More News" />
       </main>
       <Footer />
