@@ -3,13 +3,11 @@ import { AnimatePresence } from 'framer-motion';
 import Header from '../../components/header';
 import ContentShowcase from './landing';
 import WriteUp from './WriteUp';
-import NewsSection from './NewsFeed';
 import DemoSection from './demoSection';
 import Footer from '../../components/footer';
 import PreferencePreloader from '../../components/Preloader';
 import FeaturedItem from './content';
 import Hero from './hero';
-import Featured from './featured';
 
 function LandingPage() {
     // 2. State to control the preloader's visibility
@@ -35,13 +33,11 @@ function LandingPage() {
       <Header />
       <main className="flex-grow">
         <Hero />
+        <WriteUp />
         <ContentShowcase />
         <FeaturedItem />
-        <WriteUp />
-        <Featured />
         <ContentShowcase />
         <DemoSection />
-        <NewsSection title="More News" />
       </main>
       <Footer />
     </div>
