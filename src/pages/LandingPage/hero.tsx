@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiPlayCircle } from 'react-icons/fi';
+import InteractiveNebula from '../../components/Nebula'; // Make sure this path is correct
 
-// --- Dummy Data ---
-// In a real application, this data would come from your API.
-
+// --- Interfaces and Expanded Dummy Data ---
 interface ContentItem {
   id: number;
   type: string;
@@ -15,34 +14,30 @@ interface ContentItem {
   duration?: string;
 }
 
-
-interface DummyContent {
-  [key: string]: ContentItem[];
-}
-
-const dummyContent: DummyContent = {
+const dummyContent: { [key: string]: ContentItem[] } = {
   Featured: [
-    { id: 1, type: 'article', tag: 'Artificial Intelligence', headline: 'Groundbreaking AI Achieves Human-Level Text Generation', image: 'https://images.unsplash.com/photo-1599420186946-7b6fb4e297f0?q=80&w=1974', summary: 'A new language model showcases unprecedented capabilities in content creation, blurring the lines between human and machine.' },
+    { id: 1, type: 'article', tag: 'Artificial Intelligence', headline: 'Groundbreaking AI Achieves Human-Level Text Generation', image: 'https://images.unsplash.com/photo-1599420186946-7b6fb4e297f0?q=80&w=1974', summary: 'A new language model showcases unprecedented capabilities in content creation...' },
     { id: 2, type: 'audio', tag: 'Future of Tech', headline: 'Podcast: The Ethics of AI in Journalism', image: 'https://images.unsplash.com/photo-1554344224-496022890924?q=80&w=2070', duration: '15:30' },
     { id: 3, type: 'article', tag: 'Geopolitics', headline: 'Global Summit Addresses AI Regulation Framework', image: 'https://images.unsplash.com/photo-1543286386-713bdd548da4?q=80&w=2070' },
-  ],
-  Trending: [
     { id: 4, type: 'article', tag: 'Healthcare', headline: 'AI-Powered Diagnostics Receives FDA Approval', image: 'https://images.unsplash.com/photo-1576091160550-2173dba999ef?q=80&w=2070' },
     { id: 5, type: 'article', tag: 'Finance', headline: 'FinTech Disruptors Embrace AI for Risk Assessment', image: 'https://images.unsplash.com/photo-1665686310931-73933e451318?q=80&w=1974' },
-    { id: 6, type: 'audio', tag: 'Cybersecurity', headline: 'Audio Brief: The Rise of AI-Driven Phishing Scams', image: 'https://images.unsplash.com/photo-1555949963-ff9fe0c870eb?q=80&w=2070', duration: '05:45' },
   ],
-  // Add more categories as needed
+  Trending: [
+    { id: 6, type: 'audio', tag: 'Cybersecurity', headline: 'Audio Brief: The Rise of AI-Driven Phishing Scams', image: 'https://images.unsplash.com/photo-1555949963-ff9fe0c870eb?q=80&w=2070', duration: '05:45' },
+    { id: 7, type: 'article', tag: 'Environment', headline: 'Breakthrough in Carbon Capture Technology', image: 'https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?q=80&w=2070' },
+    { id: 8, type: 'article', tag: 'Business', headline: 'Navigating the Post-Pandemic Office Landscape', image: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?q=80&w=2071' },
+    { id: 9, type: 'article', tag: 'Space', headline: 'New Telescope Uncovers Secrets of Distant Galaxies', image: 'https://images.unsplash.com/photo-1454789548928-9efd52dc4031?q=80&w=1780' },
+    { id: 10, type: 'audio', tag: 'Podcast', headline: 'The Psychology of Modern Marketing', image: 'https://images.unsplash.com/photo-1533750349088-245c71b6266d?q=80&w=2070', duration: '32:10' },
+  ],
+  "Hot Topics": [
+     // Add more data for this tab...
+  ]
 };
 
 const tabs = ['Featured', 'Trending', 'Hot Topics'];
 
 // --- Reusable Card Components ---
-interface ArticleCardProps {
-  item: ContentItem;
-  isFeatured?: boolean;
-}
-
-const ArticleCard = ({ item, isFeatured = false }: ArticleCardProps) => (
+const ArticleCard: React.FC<{ item: ContentItem; isFeatured?: boolean }> = ({ item, isFeatured = false }) => (
   <motion.div 
     className={`relative w-full h-full rounded-xl overflow-hidden group ${isFeatured ? 'p-6 flex flex-col justify-end' : 'p-4'}`}
     whileHover={{ transform: "translateY(-4px)", boxShadow: "0px 10px 20px rgba(0, 191, 255, 0.1)" }}
@@ -57,11 +52,7 @@ const ArticleCard = ({ item, isFeatured = false }: ArticleCardProps) => (
   </motion.div>
 );
 
-interface AudioCardProps {
-  item: ContentItem;
-}
-
-const AudioCard = ({ item }: AudioCardProps) => (
+const AudioCard: React.FC<{ item: ContentItem }> = ({ item }) => (
   <motion.div 
     className="relative w-full h-full rounded-xl overflow-hidden group p-4 flex flex-col justify-between"
     whileHover={{ transform: "translateY(-4px)", boxShadow: "0px 10px 20px rgba(0, 191, 255, 0.1)" }}
@@ -76,10 +67,6 @@ const AudioCard = ({ item }: AudioCardProps) => (
         <FiPlayCircle />
         <span>{item.duration}</span>
       </div>
-      <div className="w-16 h-4 bg-white/20 rounded-full flex items-center">
-        {/* Mock waveform */}
-        <div className="w-full h-px bg-cyan-400 animate-pulse"></div>
-      </div>
     </div>
   </motion.div>
 );
@@ -92,29 +79,27 @@ const Hero: React.FC = () => {
   const otherItems = content.slice(1);
 
   return (
-    <section className="bg-gray-900 text-white pt-24 pb-16">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Tab Navigation */}
+    <section className="relative bg-gray-900 text-white pt-24 pb-16 overflow-hidden">
+      <div className="absolute inset-0 z-0 opacity-40">
+        <InteractiveNebula />
+      </div>
+
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center border-b border-slate-800 mb-8">
           {tabs.map(tab => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab)}
+            <button key={tab} onClick={() => setActiveTab(tab)}
               className={`relative py-3 px-4 text-sm font-medium transition-colors ${activeTab === tab ? 'text-white' : 'text-gray-400 hover:text-white'}`}
             >
               {tab}
-              {activeTab === tab && (
-                <motion.div className="absolute bottom-0 left-0 right-0 h-0.5 bg-cyan-500" layoutId="underline" />
-              )}
+              {activeTab === tab && <motion.div className="absolute bottom-0 left-0 right-0 h-0.5 bg-cyan-500" layoutId="underline" />}
             </button>
           ))}
         </div>
 
-        {/* Content Grid */}
         <AnimatePresence mode="wait">
           <motion.div
             key={activeTab}
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 min-h-[500px]"
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 lg:grid-rows-2 gap-4 h-[70vh]"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
@@ -122,18 +107,18 @@ const Hero: React.FC = () => {
           >
             {/* Featured Item */}
             {featuredItem && (
-              <div className="md:col-span-2 lg:col-span-2 lg:row-span-2 min-h-[400px] lg:min-h-0">
+              <div className="md:col-span-2 lg:col-span-2 lg:row-span-2">
                 {featuredItem.type === 'article' ? (
                   <ArticleCard item={featuredItem} isFeatured={true} />
                 ) : (
-                  <AudioCard item={featuredItem} /> // Assuming audio can also be featured
+                  <AudioCard item={featuredItem} />
                 )}
               </div>
             )}
 
-            {/* Other Items */}
+            {/* Other Items - now fills the rest of the grid */}
             {otherItems.map(item => (
-              <div key={item.id} className="min-h-[242px]">
+              <div key={item.id}>
                 {item.type === 'article' ? (
                   <ArticleCard item={item} />
                 ) : (
