@@ -16,7 +16,7 @@ import EmailVerification from "../pages/Auth/EmailVerification";
 import ForgotPassword from "../pages/Auth/ForgotPassword";
 import ResetPassword from "../pages/Auth/ResetPassword";
 import JournalistSignUp from "../pages/Auth/JournalistSignUp";
-import AdminSignUp from "../pages/Admin/admin"; 
+import AdminSignUp from "../pages/Auth/AdminSignUp"; 
 
 function AppRoutes() {
   return (

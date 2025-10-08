@@ -1,12 +1,12 @@
 import { useState, useEffect } from 'react';
 import { AnimatePresence } from 'framer-motion';
 import Header from '../../components/header';
-import ContentShowcase from './landing';
+import Content from './content';
 import WriteUp from './WriteUp';
 import DemoSection from './demoSection';
 import Footer from '../../components/footer';
 import PreferencePreloader from '../../components/Preloader';
-import FeaturedItem from './content';
+import Feature from './feature';
 import Hero from './hero';
 
 function LandingPage() {
@@ -34,9 +34,9 @@ function LandingPage() {
       <main className="flex-grow">
         <Hero />
         <WriteUp />
-        <ContentShowcase />
-        <FeaturedItem />
-        <ContentShowcase />
+        <Content />
+        <Feature />
+        <Content />
         <DemoSection />
       </main>
       <Footer />

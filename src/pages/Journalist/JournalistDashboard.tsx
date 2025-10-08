@@ -14,10 +14,13 @@ import {
   FaEdit,
   FaTrash,
   FaEye,
+  FaFileImage,
 } from 'react-icons/fa';
 import { FiMessageSquare, FiX } from 'react-icons/fi';
 import PressReleaseForm from './NewReleaseModal';
 import PressReleasePreview from './PressReleasePreview';
+
+const API_URL = 'http://localhost:5000';
 
 interface PressRelease {
   _id: string;
@@ -79,28 +82,73 @@ const JournalistDashboard: React.FC = () => {
     viewsOverTime: [],
     engagementBreakdown: []
   });
+  const [imageErrors, setImageErrors] = useState<{[key: string]: boolean}>({});
 
   useEffect(() => {
+    console.log('JournalistDashboard - User state:', user);
+    
+    // If user is undefined, we're still loading auth state
+    if (user === undefined) {
+      return;
+    }
+    
     if (!user) {
+      console.log('No user found, redirecting to login');
       navigate('/login');
       return;
     }
+    
     if (user.role !== 'journalist') {
+      console.log('User role is not journalist, redirecting to unauthorized');
       navigate('/unauthorized');
       return;
     }
 
     const fetchPressReleases = async () => {
       try {
-        const response = await fetch('http://localhost:5000/api/journalist/press-releases', {
+        console.log('Fetching press releases...');
+        const response = await fetch(`${API_URL}/api/journalist/press-releases`, {
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
         const data = await response.json();
+        console.log('Press releases response:', data);
+        
         if (data.success) {
-          setPressReleases(data.data);
+          // Handle different possible response structures
+          let releasesData = data.data;
+          
+          // If data.data is an object with pressReleases property
+          if (data.data && data.data.pressReleases && Array.isArray(data.data.pressReleases)) {
+            releasesData = data.data.pressReleases;
+          }
+          // If data.data is directly the array
+          else if (Array.isArray(data.data)) {
+            releasesData = data.data;
+          }
+          // If data is directly the array (some APIs return this way)
+          else if (Array.isArray(data)) {
+            releasesData = data;
+          }
+          // Default to empty array if structure is unexpected
+          else {
+            console.warn('Unexpected API response structure:', data);
+            releasesData = [];
+          }
+          
+          console.log('Processed press releases:', releasesData);
+          setPressReleases(releasesData);
+        } else {
+          console.error('API returned error:', data.message);
+          setPressReleases([]); // Set empty array on error
         }
       } catch (error) {
         console.error('Error fetching press releases:', error);
+        setPressReleases([]); // Set empty array on error
       } finally {
         setIsLoading(false);
       }
@@ -131,8 +179,8 @@ const JournalistDashboard: React.FC = () => {
       formData.attachments.forEach(file => form.append('attachments', file));
 
       const url = editingRelease
-        ? `http://localhost:5000/api/journalist/press-releases/${editingRelease._id}`
-        : 'http://localhost:5000/api/journalist/press-releases';
+        ? `${API_URL}/api/journalist/press-releases/${editingRelease._id}`
+        : `${API_URL}/api/journalist/press-releases`;
 
       const response = await fetch(url, {
         method: editingRelease ? 'PUT' : 'POST',
@@ -142,9 +190,11 @@ const JournalistDashboard: React.FC = () => {
 
       const data = await response.json();
       if (data.success) {
+        // Handle different response structures for the new/updated release
+        const newRelease = data.data || data;
         setPressReleases(prev => editingRelease
-          ? prev.map(r => r._id === editingRelease._id ? data.data : r)
-          : [data.data, ...prev]);
+          ? prev.map(r => r._id === editingRelease._id ? newRelease : r)
+          : [newRelease, ...prev]);
         handleCloseForm();
       } else {
         console.error('Error saving press release:', data.message);
@@ -162,7 +212,7 @@ const JournalistDashboard: React.FC = () => {
   const handleDeletePressRelease = async (releaseId: string) => {
     if (window.confirm('Are you sure you want to delete this press release?')) {
       try {
-        const response = await fetch(`http://localhost:5000/api/journalist/press-releases/${releaseId}`, {
+        const response = await fetch(`${API_URL}/api/journalist/press-releases/${releaseId}`, {
           method: 'DELETE',
           headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
         });
@@ -191,7 +241,7 @@ const JournalistDashboard: React.FC = () => {
 
   const handleProfileUpdate = async (updatedProfile: Partial<User>) => {
     try {
-      const response = await fetch('http://localhost:5000/api/journalist/profile', {
+      const response = await fetch(`${API_URL}/api/journalist/profile`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -208,6 +258,10 @@ const JournalistDashboard: React.FC = () => {
     }
   };
 
+  const handleImageError = (releaseId: string) => {
+    setImageErrors(prev => ({ ...prev, [releaseId]: true }));
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'Published': return 'bg-green-500/20 text-green-400';
@@ -217,7 +271,110 @@ const JournalistDashboard: React.FC = () => {
     }
   };
 
-  if (isLoading) {
+  // Safe rendering of press releases
+  const renderPressReleases = () => {
+    if (!pressReleases || !Array.isArray(pressReleases)) {
+      return (
+        <div className="text-center py-8">
+          <FaFileAlt className="text-3xl text-gray-600 mx-auto mb-2" />
+          <p className="text-gray-400 text-sm">No press releases available.</p>
+        </div>
+      );
+    }
+
+    if (pressReleases.length === 0) {
+      return (
+        <div className="text-center py-8">
+          <FaFileAlt className="text-3xl text-gray-600 mx-auto mb-2" />
+          <p className="text-gray-400 text-sm">No press releases yet.</p>
+          <button
+            onClick={() => setIsPressReleaseFormOpen(true)}
+            className="text-cyan-400 hover:text-cyan-300 text-sm mt-2"
+          >
+            Create your first press release
+          </button>
+        </div>
+      );
+    }
+
+    return pressReleases.map((release) => (
+      <tr key={release._id} className="hover:bg-gray-800/30">
+        <td className="p-3">
+          <div>
+            <p className="text-white text-sm font-medium">{release.headline}</p>
+            <p className="text-gray-400 text-xs italic">{release.summary}</p>
+            {release.featuredImage && !imageErrors[release._id] ? (
+              <div className="mt-2 w-16 h-10 bg-gray-700 rounded overflow-hidden">
+                <img 
+                  src={`${API_URL}${release.featuredImage}`} 
+                  alt={`Featured image for ${release.headline}`}
+                  className="w-full h-full object-cover"
+                  onError={() => handleImageError(release._id)}
+                />
+              </div>
+            ) : (
+              <div className="mt-2 w-16 h-10 bg-gray-800 rounded flex items-center justify-center">
+                <FaFileImage className="text-gray-500 text-xs" />
+              </div>
+            )}
+          </div>
+        </td>
+        <td className="p-3">
+          <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(release.status)}`}>
+            {release.status}
+          </span>
+        </td>
+        <td className="p-3">
+          <div className="flex flex-wrap gap-1 max-w-[120px]">
+            {release.tags?.slice(0, 2).map((tag, index) => (
+              <span
+                key={index}
+                className="px-2 py-1 bg-gray-700 text-gray-300 text-xs rounded-full"
+              >
+                {tag}
+              </span>
+            ))}
+            {release.tags && release.tags.length > 2 && (
+              <span className="px-2 py-1 bg-gray-800 text-gray-400 text-xs rounded-full">
+                +{release.tags.length - 2}
+              </span>
+            )}
+          </div>
+        </td>
+        <td className="p-3 text-gray-400 text-xs">
+          {new Date(release.publicationDate).toLocaleDateString()}
+        </td>
+        <td className="p-3">
+          <div className="flex gap-1">
+            <button
+              onClick={() => handleEditPressRelease(release)}
+              className="p-1 text-cyan-400 hover:text-cyan-300"
+              title="Edit"
+            >
+              <FaEdit />
+            </button>
+            <button
+              onClick={() => handleDeletePressRelease(release._id)}
+              className="p-1 text-red-400 hover:text-red-300"
+              title="Delete"
+            >
+              <FaTrash />
+            </button>
+            <button
+              onClick={() => handlePreviewPressRelease(release)}
+              className="p-1 text-gray-400 hover:text-white"
+              title="Preview"
+            >
+              <FaEye />
+            </button>
+          </div>
+        </td>
+      </tr>
+    ));
+  };
+
+  // Show loading spinner while checking authentication
+  if (user === undefined || isLoading) {
     return (
       <div className="flex items-center justify-center h-screen bg-gray-900">
         <div className="text-center">
@@ -228,6 +385,7 @@ const JournalistDashboard: React.FC = () => {
     );
   }
 
+  // Show error if no user after loading
   if (!user) {
     return (
       <div className="flex items-center justify-center h-screen bg-gray-900">
@@ -362,89 +520,9 @@ const JournalistDashboard: React.FC = () => {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-800">
-                      {pressReleases.map((release) => (
-                        <tr key={release._id} className="hover:bg-gray-800/30">
-                          <td className="p-3">
-                            <div>
-                              <p className="text-white text-sm font-medium">{release.headline}</p>
-                              <p className="text-gray-400 text-xs italic">{release.summary}</p>
-                              {release.featuredImage && (
-                                <div className="mt-2 w-16 h-10 bg-gray-700 rounded overflow-hidden">
-                                  <img 
-                                    src={`http://localhost:5000/${release.featuredImage}`} 
-                                    alt="Featured" 
-                                    className="w-full h-full object-cover"
-                                  />
-                                </div>
-                              )}
-                            </div>
-                          </td>
-                          <td className="p-3">
-                            <span className={`px-2 py-1 rounded-full text-xs ${getStatusColor(release.status)}`}>
-                              {release.status}
-                            </span>
-                          </td>
-                          <td className="p-3">
-                            <div className="flex flex-wrap gap-1 max-w-[120px]">
-                              {release.tags.slice(0, 2).map((tag, index) => (
-                                <span
-                                  key={index}
-                                  className="px-2 py-1 bg-gray-700 text-gray-300 text-xs rounded-full"
-                                >
-                                  {tag}
-                                </span>
-                              ))}
-                              {release.tags.length > 2 && (
-                                <span className="px-2 py-1 bg-gray-800 text-gray-400 text-xs rounded-full">
-                                  +{release.tags.length - 2}
-                                </span>
-                              )}
-                            </div>
-                          </td>
-                          <td className="p-3 text-gray-400 text-xs">
-                            {new Date(release.publicationDate).toLocaleDateString()}
-                          </td>
-                          <td className="p-3">
-                            <div className="flex gap-1">
-                              <button
-                                onClick={() => handleEditPressRelease(release)}
-                                className="p-1 text-cyan-400 hover:text-cyan-300"
-                                title="Edit"
-                              >
-                                <FaEdit />
-                              </button>
-                              <button
-                                onClick={() => handleDeletePressRelease(release._id)}
-                                className="p-1 text-red-400 hover:text-red-300"
-                                title="Delete"
-                              >
-                                <FaTrash />
-                              </button>
-                              <button
-                                onClick={() => handlePreviewPressRelease(release)}
-                                className="p-1 text-gray-400 hover:text-white"
-                                title="Preview"
-                              >
-                                <FaEye />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
+                      {renderPressReleases()}
                     </tbody>
                   </table>
-                  {pressReleases.length === 0 && (
-                    <div className="text-center py-8">
-                      <FaFileAlt className="text-3xl text-gray-600 mx-auto mb-2" />
-                      <p className="text-gray-400 text-sm">No press releases yet.</p>
-                      <button
-                        onClick={() => setIsPressReleaseFormOpen(true)}
-                        className="text-cyan-400 hover:text-cyan-300 text-sm mt-2"
-                      >
-                        Create your first press release
-                      </button>
-                    </div>
-                  )}
                 </div>
               </>
             )}

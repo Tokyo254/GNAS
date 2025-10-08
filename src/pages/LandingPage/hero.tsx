@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiPlayCircle } from 'react-icons/fi';
-import InteractiveNebula from '../../components/Nebula'; // Make sure this path is correct
+import InteractiveNebula from '../../components/Nebula';
 
 // --- Interfaces and Expanded Dummy Data ---
 interface ContentItem {
