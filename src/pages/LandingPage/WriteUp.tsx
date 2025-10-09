@@ -87,7 +87,7 @@ const TopicSelector: React.FC = () => {
           transition={{ duration: 0.6, delay: 0.5 }}
         >
           <Link
-            to="/signup"
+            to="#"
             className="inline-block px-8 py-3 text-white bg-cyan-500 rounded-full hover:bg-cyan-600 transition-transform hover:scale-105"
           >
             Create My Feed
