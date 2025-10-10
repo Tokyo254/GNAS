@@ -261,7 +261,7 @@ const AudioSection: React.FC<{ podcasts: ContentItem[] }> = ({ podcasts }) => {
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <FiHeadphones className="text-cyan-400 text-lg" />
-          <h3 className="font-bold text-white text-lg">Featured Podcasts</h3>
+          <h3 className="font-bold text-white text-lg">Featured Radio</h3>
           <span className="text-xs text-gray-400 bg-slate-700 px-2 py-1 rounded-full">
             {currentAudioIndex + 1}/{totalGroups}
           </span>

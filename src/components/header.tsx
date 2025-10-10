@@ -37,9 +37,9 @@ const Header: React.FC = () => {
 
           {/* Desktop Nav Links */}
           <nav className="hidden md:flex items-center space-x-6">
-            <NavLink to="/" className={navLinkClass}>Home</NavLink>
+            <NavLink to="/" className={navLinkClass}>For Public</NavLink>
             <NavLink to="/journalist-signup" className={navLinkClass}>For Journalists</NavLink>
-            <NavLink to="/signup" className={navLinkClass}>For Comms Proffesionals</NavLink>
+            <NavLink to="/signup" className={navLinkClass}>For Comms Professionals</NavLink>
           </nav> 
 
           {/* Desktop Right Side: Search & Auth */}
