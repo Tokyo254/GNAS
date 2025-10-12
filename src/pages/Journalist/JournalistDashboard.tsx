@@ -19,6 +19,7 @@ import {
 import { FiMessageSquare, FiX } from 'react-icons/fi';
 import PressReleaseForm from './NewReleaseModal';
 import PressReleasePreview from './PressReleasePreview';
+import CategorySelector from '../../components/categories';
 
 const API_URL = 'http://localhost:5000';
 
@@ -28,7 +29,7 @@ interface PressRelease {
   summary: string;
   fullContent: string;
   author: string;
-  tags: string[];
+  categories: string[];
   attachments: string[];
   featuredImage?: string;
   publicationDate: string;
@@ -42,7 +43,7 @@ interface PressReleaseFormData {
   summary: string;
   fullContent: string;
   author: string;
-  tags: string;
+  categories: string;
   attachments: File[];
   featuredImage?: File;
   publicationDate: string;
@@ -58,9 +59,17 @@ interface AnalyticsData {
   engagementBreakdown: { platform: string; percentage: number }[];
 }
 
+// Extend the User interface to include categories
+interface JournalistUser extends User {
+  categories?: string[];
+}
+
 const JournalistDashboard: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user: authUser, logout } = useAuth();
   const navigate = useNavigate();
+
+  // Cast the user to our extended interface
+  const user = authUser as JournalistUser;
 
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(
     window.innerWidth < 768
@@ -170,12 +179,21 @@ const JournalistDashboard: React.FC = () => {
       form.append('summary', formData.summary);
       form.append('fullContent', formData.fullContent);
       form.append('author', formData.author);
-      form.append('tags', formData.tags);
+      
+      // Convert categories from comma-separated string to JSON array
+      const categoriesArray = formData.categories
+        .split(',')
+        .map(category => category.trim())
+        .filter(category => category !== '');
+      form.append('categories', JSON.stringify(categoriesArray));
+      
       form.append('publicationDate', formData.publicationDate);
       form.append('status', formData.status);
+      
       if (formData.featuredImage) {
         form.append('featuredImage', formData.featuredImage);
       }
+      
       formData.attachments.forEach(file => form.append('attachments', file));
 
       const url = editingRelease
@@ -198,9 +216,11 @@ const JournalistDashboard: React.FC = () => {
         handleCloseForm();
       } else {
         console.error('Error saving press release:', data.message);
+        alert('Error saving press release: ' + data.message);
       }
     } catch (error) {
       console.error('Error saving press release:', error);
+      alert('Error saving press release. Please try again.');
     }
   };
 
@@ -239,7 +259,7 @@ const JournalistDashboard: React.FC = () => {
     setEditingRelease(null);
   };
 
-  const handleProfileUpdate = async (updatedProfile: Partial<User>) => {
+  const handleProfileUpdate = async (updatedProfile: Partial<JournalistUser>) => {
     try {
       const response = await fetch(`${API_URL}/api/journalist/profile`, {
         method: 'PUT',
@@ -252,6 +272,7 @@ const JournalistDashboard: React.FC = () => {
       const data = await response.json();
       if (data.success) {
         localStorage.setItem('user', JSON.stringify({ ...user, ...updatedProfile }));
+        // You might want to update the auth context here as well
       }
     } catch (error) {
       console.error('Error updating profile:', error);
@@ -326,17 +347,17 @@ const JournalistDashboard: React.FC = () => {
         </td>
         <td className="p-3">
           <div className="flex flex-wrap gap-1 max-w-[120px]">
-            {release.tags?.slice(0, 2).map((tag, index) => (
+            {release.categories?.slice(0, 2).map((category, index) => (
               <span
                 key={index}
                 className="px-2 py-1 bg-gray-700 text-gray-300 text-xs rounded-full"
               >
-                {tag}
+                {category}
               </span>
             ))}
-            {release.tags && release.tags.length > 2 && (
+            {release.categories && release.categories.length > 2 && (
               <span className="px-2 py-1 bg-gray-800 text-gray-400 text-xs rounded-full">
-                +{release.tags.length - 2}
+                +{release.categories.length - 2}
               </span>
             )}
           </div>
@@ -514,7 +535,7 @@ const JournalistDashboard: React.FC = () => {
                       <tr>
                         <th className="text-left p-3 text-xs">Headline</th>
                         <th className="text-left p-3 text-xs">Status</th>
-                        <th className="text-left p-3 text-xs">Tags</th>
+                        <th className="text-left p-3 text-xs">Categories</th>
                         <th className="text-left p-3 text-xs">Date</th>
                         <th className="text-left p-3 text-xs">Actions</th>
                       </tr>
@@ -599,14 +620,15 @@ const JournalistDashboard: React.FC = () => {
                     />
                   </div>
                   <div className="col-span-1 sm:col-span-2">
-                    <label className="block text-sm text-gray-400 mb-1">Interests</label>
-                    <input
-                      type="text"
-                      value={user.interests?.join(', ') || ''}
-                      onChange={(e) => handleProfileUpdate({ interests: e.target.value.split(',').map(i => i.trim()) })}
-                      className="w-full bg-gray-800 border border-gray-700 rounded-lg px-3 py-2 text-white text-sm focus:ring-1 focus:ring-cyan-500"
-                      placeholder="Enter interests separated by commas"
+                    <CategorySelector
+                      selectedCategories={user.categories || []}
+                      onCategoriesChange={(categories) => handleProfileUpdate({ categories })}
+                      maxSelection={8}
+                      label="Your Preferred Categories"
                     />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Select categories you're interested in to personalize your feed
+                    </p>
                   </div>
                 </div>
                 <div className="flex justify-end gap-3 mt-4">
@@ -620,7 +642,7 @@ const JournalistDashboard: React.FC = () => {
                     onClick={() => handleProfileUpdate({
                       phoneNumber: user.phoneNumber,
                       bio: user.bio,
-                      interests: user.interests
+                      categories: user.categories
                     })}
                     className="px-3 py-2 bg-cyan-500 hover:bg-cyan-600 text-white rounded-lg text-sm"
                   >
@@ -645,13 +667,14 @@ const JournalistDashboard: React.FC = () => {
                   summary: editingRelease.summary,
                   fullContent: editingRelease.fullContent,
                   author: editingRelease.author,
-                  tags: editingRelease.tags.join(', '),
+                  categories: editingRelease.categories.join(', '),
                   publicationDate: editingRelease.publicationDate,
                   status: editingRelease.status
                 }
               : { author: user.fullName }
           }
           mode={editingRelease ? 'edit' : 'create'}
+          user={user}
         />
       )}
 

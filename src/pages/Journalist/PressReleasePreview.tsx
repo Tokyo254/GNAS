@@ -1,6 +1,5 @@
-import { motion } from 'framer-motion';
-import { FaUserCircle, FaCalendar, FaTag, FaPaperclip } from 'react-icons/fa';
-import { FiX } from 'react-icons/fi';
+import { motion, AnimatePresence } from 'framer-motion';
+import { FaTimes, FaCalendar, FaUser, FaPaperclip } from 'react-icons/fa';
 
 interface PressRelease {
   _id: string;
@@ -8,7 +7,7 @@ interface PressRelease {
   summary: string;
   fullContent: string;
   author: string;
-  tags: string[];
+  categories: string[]; // Changed from tags to categories
   attachments: string[];
   featuredImage?: string;
   publicationDate: string;
@@ -27,82 +26,91 @@ const PressReleasePreview: React.FC<PressReleasePreviewProps> = ({ release, isOp
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4 backdrop-blur-md">
+    <AnimatePresence>
       <motion.div
-        className="bg-[#0d1117] rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto ring-1 ring-slate-800"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, ease: "easeOut" }}
+        className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
       >
-        <div className="p-4 border-b border-slate-800 flex justify-between items-center sticky top-0 bg-[#0d1117]">
-          <h2 className="text-lg font-bold text-white">Press Release Preview</h2>
-          <button onClick={onClose} className="text-gray-400 hover:text-white">
-            <FiX size={20} />
-          </button>
-        </div>
-        <div className="p-4 space-y-4">
-          {release.featuredImage && (
-            <div className="w-full h-48 sm:h-64 bg-slate-800 rounded-lg overflow-hidden">
-              <img 
-                src={`http://localhost:5000/${release.featuredImage}`} 
-                alt="Featured" 
-                className="w-full h-full object-cover"
-              />
+        <motion.div
+          className="bg-[#0d1117] rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto"
+          initial={{ y: 50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: 50, opacity: 0 }}
+        >
+          <div className="p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold text-white">Press Release Preview</h2>
+              <button onClick={onClose} className="text-gray-400 hover:text-white">
+                <FaTimes size={20} />
+              </button>
             </div>
-          )}
-          <div className="border-b border-slate-800 pb-4">
-            <h1 className="text-lg sm:text-2xl font-bold text-white mb-2">{release.headline}</h1>
-            <p className="text-sm text-gray-300 italic mb-3">{release.summary}</p>
-            <div className="flex flex-wrap gap-3 text-xs text-gray-400">
-              <div className="flex items-center gap-2">
-                <FaUserCircle className="text-cyan-400" />
-                <span>By {release.author}</span>
+
+            <div className="space-y-4">
+              <h1 className="text-2xl font-bold text-white">{release.headline}</h1>
+              
+              <div className="flex items-center gap-4 text-sm text-gray-400">
+                <div className="flex items-center gap-1">
+                  <FaCalendar className="text-cyan-400" />
+                  <span>{new Date(release.publicationDate).toLocaleDateString()}</span>
+                </div>
+                <div className="flex items-center gap-1">
+                  <FaUser className="text-cyan-400" />
+                  <span>{release.author}</span>
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <FaCalendar className="text-cyan-400" />
-                <span>{new Date(release.publicationDate).toLocaleDateString('en-US', {
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric'
-                })}</span>
+
+              {release.featuredImage && (
+                <div className="my-4">
+                  <img 
+                    src={`http://localhost:5000${release.featuredImage}`} 
+                    alt="Featured" 
+                    className="w-full h-auto max-h-96 object-cover rounded-lg"
+                  />
+                </div>
+              )}
+
+              <div className="prose prose-invert max-w-none">
+                <p className="text-gray-300 text-lg italic border-l-4 border-cyan-500 pl-4">
+                  {release.summary}
+                </p>
+                <div className="text-gray-300 mt-4 whitespace-pre-line">
+                  {release.fullContent}
+                </div>
               </div>
-              <div className="flex items-center gap-2">
-                <FaTag className="text-cyan-400" />
-                <span>{release.tags.join(', ')}</span>
-              </div>
-            </div>
-          </div>
-          <div className="prose prose-invert max-w-none">
-            <div className="text-gray-300 text-sm leading-relaxed whitespace-pre-wrap">
-              {release.fullContent}
-            </div>
-          </div>
-          {release.attachments && release.attachments.length > 0 && (
-            <div className="border-t border-slate-800 pt-4">
-              <h3 className="text-base font-semibold text-white mb-3">Attachments</h3>
-              <div className="space-y-2">
-                {release.attachments.map((attachment, index) => (
-                  <div key={index} className="flex items-center gap-2 p-2 bg-slate-800/50 rounded-lg">
-                    <FaPaperclip className="text-cyan-400 text-sm" />
-                    <a href={`http://localhost:5000/${attachment}`} target="_blank" className="text-gray-300 text-sm hover:underline">
-                      {attachment.split('/').pop()}
-                    </a>
+
+              {release.categories.length > 0 && (
+                <div className="flex flex-wrap gap-2">
+                  {release.categories.map((category, index) => (
+                    <span
+                      key={index}
+                      className="px-3 py-1 bg-cyan-500/20 text-cyan-400 rounded-full text-sm border border-cyan-500/30"
+                    >
+                      {category}
+                    </span>
+                  ))}
+                </div>
+              )}
+
+              {release.attachments.length > 0 && (
+                <div>
+                  <h4 className="text-sm font-medium text-gray-300 mb-2">Attachments</h4>
+                  <div className="space-y-2">
+                    {release.attachments.map((attachment, index) => (
+                      <div key={index} className="text-gray-300 text-sm bg-gray-800 px-3 py-2 rounded flex items-center gap-2">
+                        <FaPaperclip className="text-cyan-400" />
+                        <span>{attachment}</span>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </div>
-          )}
-          <div className="border-t border-slate-800 pt-4">
-            <div className="text-xs text-gray-400 space-y-2">
-              <p><strong>Status:</strong> <span className={`px-2 py-1 rounded-full text-xs ${release.status === 'Published' ? 'bg-green-500/20 text-green-400' : release.status === 'Under Review' ? 'bg-yellow-500/20 text-yellow-400' : 'bg-blue-500/20 text-blue-400'}`}>{release.status}</span></p>
-              {release.createdAt && (
-                <p><strong>Created:</strong> {new Date(release.createdAt).toLocaleDateString()}</p>
+                </div>
               )}
             </div>
           </div>
-        </div>
+        </motion.div>
       </motion.div>
-    </div>
+    </AnimatePresence>
   );
 };
 

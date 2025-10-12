@@ -14,6 +14,7 @@ export interface User {
   phoneNumber?: string;
   bio?: string;
   interests?: string[];
+  categories?: string[];
   isEmailVerified: boolean;
   status: string;
 }
