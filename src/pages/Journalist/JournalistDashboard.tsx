@@ -487,7 +487,7 @@ const JournalistDashboard: React.FC = () => {
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 p-4 overflow-y-auto ml-0 md:ml-64">
+      <main className="flex-1 p-4 overflow-y-auto ml-0 md:ml-8 w-full md:w-auto">
         <div className="max-w-7xl mx-auto space-y-4">
           {activeTab === 'myReleases' && (
             <div className="bg-[#161B22] rounded-lg p-4 ring-1 ring-white/10 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
