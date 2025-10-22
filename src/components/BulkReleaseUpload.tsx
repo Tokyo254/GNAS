@@ -240,7 +240,7 @@ const BulkReleaseUpload: React.FC<BulkReleaseUploadProps> = ({ isOpen, onClose, 
                         <table className="w-full text-sm">
                           <thead>
                             <tr className="bg-gray-700/50">
-                              {previewData[0]?.map((header, index) => (
+                              {previewData[0]?.map((header: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined, index: React.Key | null | undefined) => (
                                 <th key={index} className="text-left p-3 text-gray-300 font-medium">
                                   {header}
                                 </th>
@@ -250,7 +250,7 @@ const BulkReleaseUpload: React.FC<BulkReleaseUploadProps> = ({ isOpen, onClose, 
                           <tbody>
                             {previewData.slice(1).map((row, rowIndex) => (
                               <tr key={rowIndex} className="border-t border-gray-700/50">
-                                {row.map((cell, cellIndex) => (
+                                {row.map((cell: string | number | bigint | boolean | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | React.ReactPortal | Promise<string | number | bigint | boolean | React.ReactPortal | React.ReactElement<unknown, string | React.JSXElementConstructor<any>> | Iterable<React.ReactNode> | null | undefined> | null | undefined, cellIndex: React.Key | null | undefined) => (
                                   <td key={cellIndex} className="p-3 text-gray-400 max-w-xs truncate">
                                     {cell}
                                   </td>
