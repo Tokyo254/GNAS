@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import SignUp from "../../assets/SignUp.mp4";
 import { useToast } from "../../context/ToastContext";
 import { motion, AnimatePresence, easeIn, easeOut } from "framer-motion";
+import { apiCall } from "../../utils/api";
 
 const industries = [
   "Technology", "Healthcare", "Finance", "Geopolitics", "Environment", "Arts & Culture",
@@ -112,11 +113,8 @@ const SignUpWizard: React.FC = () => {
   setError("");
   
   try {
-    const response = await fetch('http://localhost:5000/api/auth/register/comms', {
+    const data = await apiCall('/auth/register/comms', {
       method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify({
         firstName,
         surname, 
@@ -132,8 +130,6 @@ const SignUpWizard: React.FC = () => {
         phoneNumber
       }),
     });
-
-    const data = await response.json();
 
     if (data.success) {
       addToast("Registration successful! Please check your email for verification.", "success");
