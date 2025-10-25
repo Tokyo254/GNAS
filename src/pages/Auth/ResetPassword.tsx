@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import Header from '../../components/header';
 import SignUp from '../../assets/SignUp.mp4'; 
 import { FiLock, FiCheck, FiX } from 'react-icons/fi';
+import { apiCall } from '../../utils/api';
 
 const ResetPassword: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -67,34 +68,28 @@ const ResetPassword: React.FC = () => {
     setMessage('');
 
     try {
-      const response = await fetch('http://localhost:5000/api/auth/reset-password', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        // Fixed: Include confirmPassword in the request body
-        body: JSON.stringify({ 
-          password, 
-          confirmPassword, 
-          token 
-        }),
-      });
+      const result = await apiCall('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ 
+        password, 
+        confirmPassword, 
+        token 
+      }),
+    });
 
-      const data = await response.json();
-
-      if (data.success) {
-        setMessage('Password reset successfully! Redirecting to login...');
-        setTimeout(() => navigate('/login'), 3000);
-      } else {
-        setError(data.message || 'Failed to reset password. The link may have expired.');
-      }
-    } catch (error) {
-      console.error('Reset password error:', error);
-      setError('An error occurred. Please check your connection and try again.');
-    } finally {
-      setIsLoading(false);
+    if (result.success) {
+      setMessage('Password reset successfully! Redirecting to login...');
+      setTimeout(() => navigate('/login'), 3000);
+    } else {
+      setError(result.message || 'Failed to reset password. The link may have expired.');
     }
-  };
+  } catch (error) {
+    console.error('Reset password error:', error);
+    setError('An error occurred. Please check your connection and try again.');
+  } finally {
+    setIsLoading(false);
+  }
+};
   
   // Password strength indicator
   const getPasswordStrength = () => {

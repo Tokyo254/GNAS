@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import SignUp from "../../assets/SignUp.mp4";
 import { useToast } from "../../context/ToastContext";
 import { motion } from "framer-motion";
+import { apiFormDataCall } from "../../utils/api";
 
 const industries = [
   "Technology", "Healthcare", "Finance", "Geopolitics", "Environment", "Arts & Culture",
@@ -124,16 +125,12 @@ const handleSubmit = async (e: React.FormEvent) => {
 
     console.log('Sending journalist registration...');
 
-    // Register journalist using fetch
-    const response = await fetch('http://localhost:5000/api/auth/register/journalist', {
-      method: 'POST',
-      body: formData,
-    });
+    // Replace fetch with apiFormDataCall
+    const result = await apiFormDataCall('/auth/register/journalist', formData);
 
-    const data = await response.json();
-    console.log('Journalist registration response:', data);
+    console.log('Journalist registration response:', result);
 
-    if (data.success) {
+    if (result.success) {
       addToast("Journalist registration successful! Your account is pending verification.", "success");
       
       // Redirect to login since journalist accounts need verification
@@ -141,8 +138,8 @@ const handleSubmit = async (e: React.FormEvent) => {
         navigate('/login');
       }, 2000);
     } else {
-      setError(data.message);
-      addToast(data.message, "error");
+      setError(result.message ?? "An error occurred");
+      addToast(result.message ?? "An error occurred", "error");
     }
   } catch (error) {
     console.error('Registration error:', error);

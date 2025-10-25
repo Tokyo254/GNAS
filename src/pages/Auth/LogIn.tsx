@@ -5,6 +5,7 @@ import SignUp from "../../assets/SignUp.mp4";
 import { useAuth } from "../../context/AuthContext";
 import { useToast } from "../../context/ToastContext";
 import { FiMail, FiLock } from "react-icons/fi";
+import { apiCall } from "../../utils/api";
 
 const Login: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -35,34 +36,28 @@ const Login: React.FC = () => {
   setError("");
   
   try {
-    const response = await fetch('http://localhost:5000/api/auth/login', {
+    const result = await apiCall('/auth/login', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify({
         email, 
         password,
       }),
     });
 
-    const data = await response.json();
+  console.log('Login response:', result); 
     
-    console.log('Login response:', data); 
-    
-    if (data.success && data.data) {
+    if (result.success && result.data) {
       addToast("Login successful!", "success");
-      login(data.data.token, data.data.refreshToken, data.data.user, (path) => {
+      login(result.data.token, result.data.refreshToken, result.data.user, (path) => {
         navigate(path);
       });
     } else {
-      // More specific error messages
-      const errorMessage = data.message || 'Login failed';
+      const errorMessage = result.message || 'Login failed';
       setError(errorMessage);
       addToast(errorMessage, "error");
       
       // Log for debugging
-      console.error('Login failed:', data);
+      console.error('Login failed:', result);
     }
   } catch (error) {
     console.error('Login network error:', error);
@@ -72,7 +67,6 @@ const Login: React.FC = () => {
     setIsLoading(false);
   }
 };
-
   // Reusable style for text inputs
   const inputStyle = "w-full border border-gray-600 bg-gray-800/50 rounded-md pl-10 pr-4 py-2.5 text-sm text-gray-200 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500";
 

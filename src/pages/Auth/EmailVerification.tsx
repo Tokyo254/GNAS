@@ -4,6 +4,7 @@ import Header from '../../components/header';
 import SignUp from '../../assets/SignUp.mp4';
 import { motion, AnimatePresence, easeIn, easeOut } from 'framer-motion';
 import { FiCheckCircle, FiXCircle, FiClock } from 'react-icons/fi';
+import { apiCall } from '../../utils/api';
 
 const EmailVerification: React.FC = () => {
   const [searchParams] = useSearchParams();
@@ -31,30 +32,27 @@ const EmailVerification: React.FC = () => {
 
       try {
         // Changed to POST request with token in body
-        const response = await fetch('http://localhost:5000/api/auth/verify-email', {
+        const result = await apiCall('/auth/verify-email', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
           body: JSON.stringify({ token })
         });
 
-        const data = await response.json();
 
-        if (response.ok && data.success) {
-          setStatus('success');
-          setMessage('Email verified successfully! You will be redirected to the login page shortly.');
-          setTimeout(() => navigate('/login'), 4000);
-        } else {
-          setStatus('error');
-          setMessage(data.message || 'Email verification failed. The link may have expired.');
-        }
-      } catch (error) {
-        console.error('Verification error:', error);
+
+      if (result.success) {
+        setStatus('success');
+        setMessage('Email verified successfully! You will be redirected to the login page shortly.');
+        setTimeout(() => navigate('/login'), 4000);
+      } else {
         setStatus('error');
-        setMessage('An error occurred during verification. Please check your connection and try again.');
+        setMessage(result.message || 'Email verification failed. The link may have expired.');
       }
-    };
+    } catch (error) {
+      console.error('Verification error:', error);
+      setStatus('error');
+      setMessage('An error occurred during verification. Please check your connection and try again.');
+    }
+  };
 
     // Remove the setTimeout and verify immediately for better UX
     verifyEmail();

@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import Header from '../../components/header';      // For consistent navigation
-import SignUp from '../../assets/SignUp.mp4';      // Reusing the same background video
-import { FiMail } from 'react-icons/fi';           // Icon for the input field
+import Header from '../../components/header';     
+import SignUp from '../../assets/SignUp.mp4';      
+import { FiMail } from 'react-icons/fi';           
+import { apiCall } from '../../utils/api';
 
 const ForgotPassword: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -25,28 +26,23 @@ const ForgotPassword: React.FC = () => {
     setMessage('');
 
     try {
-      const response = await fetch('http://localhost:5000/api/auth/forgot-password', {
+      const result = await apiCall('/auth/forgot-password', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({ email }),
       });
 
-      const data = await response.json();
-
-      if (data.success) {
-        setMessage('If an account with that email exists, password reset instructions have been sent.');
-        setEmail(''); // Clear the input on success
-      } else {
-        setError(data.message || 'Failed to send reset instructions');
-      }
-    } catch (error) {
-      setError('An error occurred. Please try again.');
-    } finally {
-      setIsLoading(false);
+      if (result.success) {
+      setMessage('If an account with that email exists, password reset instructions have been sent.');
+      setEmail(''); // Clear the input on success
+    } else {
+      setError(result.message || 'Failed to send reset instructions');
     }
-  };
+  } catch (error) {
+    setError('An error occurred. Please try again.');
+  } finally {
+    setIsLoading(false);
+  }
+};
 
   // Reusable style for the input field
   const inputStyle = "w-full border border-gray-600 bg-gray-800/50 rounded-md pl-10 pr-4 py-2.5 text-sm text-gray-200 placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-cyan-500";
