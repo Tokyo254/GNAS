@@ -7,7 +7,7 @@ interface PressRelease {
   summary: string;
   fullContent: string;
   author: string;
-  categories: string[]; // Changed from tags to categories
+  categories: string[]; 
   attachments: string[];
   featuredImage?: string;
   publicationDate: string;

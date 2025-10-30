@@ -17,6 +17,7 @@ import ForgotPassword from "../pages/Auth/ForgotPassword";
 import ResetPassword from "../pages/Auth/ResetPassword";
 import JournalistSignUp from "../pages/Auth/JournalistSignUp";
 import AdminSignUp from "../pages/Auth/AdminSignUp"; 
+import BlogPostPage from "../pages/PressRelease/BlogPage";
 
 function AppRoutes() {
   return (
@@ -35,6 +36,8 @@ function AppRoutes() {
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/unauthorized" element={<Unauthorized />} />
+            <Route path="/blog/:id" element={<BlogPostPage />} />
+
             
             {/* Role-Based Protected Routes */}
             

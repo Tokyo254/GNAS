@@ -1,6 +1,3 @@
-// utils/api.ts
-
-// Get API base URL from environment with fallbacks
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
                      (import.meta.env.DEV ? 'http://localhost:5000' : '');
 
@@ -169,5 +166,119 @@ export const apiFormDataCall = async <T = any>(
       success: false,
       message: error instanceof Error ? error.message : 'Upload failed'
     };
+  }
+};
+
+export const blogService = {
+  // Get all blog posts with filters
+  async getPosts(params?: {
+    page?: number;
+    limit?: number;
+    category?: string;
+    featured?: boolean;
+    sortBy?: 'latest' | 'popular' | 'trending';
+  }): Promise<ApiResponse<{
+    posts: any[];
+    pagination: {
+      page: number;
+      limit: number;
+      total: number;
+      pages: number;
+    };
+  }>> {
+    const queryParams = new URLSearchParams();
+    
+    if (params?.page) queryParams.append('page', params.page.toString());
+    if (params?.limit) queryParams.append('limit', params.limit.toString());
+    if (params?.category) queryParams.append('category', params.category);
+    if (params?.featured) queryParams.append('featured', 'true');
+    if (params?.sortBy) queryParams.append('sortBy', params.sortBy);
+    
+    const queryString = queryParams.toString();
+    const url = `/blog/posts${queryString ? `?${queryString}` : ''}`;
+    
+    return apiCall(url);
+  },
+
+  // Get single blog post
+  async getPost(id: string): Promise<ApiResponse<any>> {
+    return apiCall(`/blog/posts/${id}`);
+  },
+
+  // Like/unlike a post
+  async likePost(id: string): Promise<ApiResponse<{
+    likes: number;
+    userLiked: boolean;
+  }>> {
+    return apiCall(`/blog/posts/${id}/like`, {
+      method: 'POST'
+    });
+  },
+
+  // Share a post
+  async sharePost(id: string): Promise<ApiResponse<{
+    shares: number;
+  }>> {
+    return apiCall(`/blog/posts/${id}/share`, {
+      method: 'POST'
+    });
+  },
+
+  // Get comments for a post
+  async getComments(postId: string): Promise<ApiResponse<any[]>> {
+    return apiCall(`/blog/posts/${postId}/comments`);
+  },
+
+  // Add comment
+  async addComment(
+    postId: string, 
+    content: string, 
+    parentComment?: string
+  ): Promise<ApiResponse<any>> {
+    return apiCall(`/blog/posts/${postId}/comments`, {
+      method: 'POST',
+      body: JSON.stringify({ content, parentComment })
+    });
+  },
+
+  // Like comment
+  async likeComment(
+    postId: string, 
+    commentId: string
+  ): Promise<ApiResponse<{
+    likes: number;
+    userLiked: boolean;
+  }>> {
+    return apiCall(`/blog/posts/${postId}/comments/${commentId}/like`, {
+      method: 'POST'
+    });
+  },
+
+  // Report a post
+  async reportPost(
+    postId: string, 
+    reason: string, 
+    details: string
+  ): Promise<ApiResponse> {
+    return apiCall(`/blog/posts/${postId}/report`, {
+      method: 'POST',
+      body: JSON.stringify({ reason, details })
+    });
+  }
+};
+
+// Add to your utils/api.ts
+export const bulkUploadService = {
+  // Bulk upload press releases
+  async uploadPressReleases(file: File): Promise<ApiResponse<{
+    total: number;
+    successful: number;
+    failed: number;
+    errors: string[];
+  }>> {
+    const formData = new FormData();
+    formData.append('csv', file);
+    
+    return apiFormDataCall('/bulk-upload/press-releases', formData);
   }
 };

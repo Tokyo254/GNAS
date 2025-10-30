@@ -23,9 +23,9 @@ import {
   FaRegClock,
   FaRegChartBar
 } from 'react-icons/fa';
-import PressReleaseForm from '../Journalist/NewReleaseModal';
+import PressReleaseForm from '../PressRelease/NewReleaseModal';
 import AudioReleaseForm from './AudioRelease';
-import PressReleasePreview from '../Journalist/PressReleasePreview';
+import PressReleasePreview from '../PressRelease/PressReleasePreview';
 
 
 interface PressRelease {

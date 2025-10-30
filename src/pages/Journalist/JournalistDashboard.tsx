@@ -17,8 +17,8 @@ import {
   FaFileImage,
 } from 'react-icons/fa';
 import { FiMessageSquare, FiX } from 'react-icons/fi';
-import PressReleaseForm from './NewReleaseModal';
-import PressReleasePreview from './PressReleasePreview';
+import PressReleaseForm from '../PressRelease/NewReleaseModal';
+import PressReleasePreview from '../PressRelease/PressReleasePreview';
 import CategorySelector from '../../components/categories';
 
 const API_URL = 'http://localhost:5000';
