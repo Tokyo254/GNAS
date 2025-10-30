@@ -19,7 +19,6 @@ import {
   FaEdit,
   FaTrash,
   FaEye,
-  FaUserPlus,
   FaChild,
   FaComment,
   FaExclamationTriangle,
@@ -38,18 +37,12 @@ import {
   FaClock,
   FaMusic,
   FaMicrophone,
-  FaVideo,
   FaImage,
   FaFileCsv,
   FaChartLine,
   FaChartPie,
   FaMapMarkerAlt,
-  FaCalendarAlt,
-  FaRocket,
-  FaDatabase,
-  FaShieldAlt,
-  FaCogs
-} from 'react-icons/fa';
+  FaRocket} from 'react-icons/fa';
 
 interface User {
   _id: string;
