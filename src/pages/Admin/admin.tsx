@@ -25,7 +25,6 @@ import {
   FaFlag,
   FaArrowUp,
   FaArrowDown,
-  FaEye as FaViews,
   FaShare,
   FaHeart,
   FaCommentDots,
@@ -103,7 +102,7 @@ interface WhistleblowerMessage {
 
 interface AnalyticsData {
   totalUsers: number;
-  pendingComms: number;
+  pendingJournalists: number;
   totalReleases: number;
   activeJournalists: number;
   systemHealth: number;
@@ -350,7 +349,7 @@ const AdminDashboard: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData>({
     totalUsers: 0,
-    pendingComms: 0,
+    pendingJournalists: 0,
     totalReleases: 0,
     activeJournalists: 0,
     systemHealth: 100,
@@ -408,7 +407,7 @@ const AdminDashboard: React.FC = () => {
 
   const fetchPendingUsers = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/admin/comms/pending`, {
+      const response = await fetch(`${API_URL}/api/admin/journalists/pending`, {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         }
@@ -474,7 +473,7 @@ const AdminDashboard: React.FC = () => {
       // Set mock data for demonstration
       setAnalyticsData({
         totalUsers: 1247,
-        pendingComms: 23,
+        pendingJournalists: 23,
         totalReleases: 892,
         activeJournalists: 156,
         systemHealth: 98.5,
@@ -605,7 +604,7 @@ const AdminDashboard: React.FC = () => {
 
   const handleApproveUser = async (userId: string) => {
     try {
-      const response = await fetch(`${API_URL}/api/admin/comms/${userId}/approve`, {
+      const response = await fetch(`${API_URL}/api/admin/journalists/${userId}/approve`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -627,7 +626,7 @@ const AdminDashboard: React.FC = () => {
 
   const handleRejectUser = async (userId: string) => {
     try {
-      const response = await fetch(`${API_URL}/api/admin/comms/${userId}/reject`, {
+      const response = await fetch(`${API_URL}/api/admin/journalists/${userId}/reject`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -840,288 +839,289 @@ const AdminDashboard: React.FC = () => {
   );
 
   // Enhanced Analytics Dashboard Component
-  const AnalyticsDashboard = () => (
-    <div className="space-y-6">
-      {/* Real-time Metrics Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {[
-          { 
-            label: 'Total Users', 
-            value: analyticsData.totalUsers.toLocaleString(), 
-            change: analyticsData.userGrowth,
-            icon: FaUsers, 
-            color: 'purple',
-            trend: 'up'
-          },
-          { 
-            label: 'Daily Active', 
-            value: analyticsData.dailyActiveUsers.toLocaleString(), 
-            change: 12.5,
-            icon: FaChartLine, 
-            color: 'blue',
-            trend: 'up'
-          },
-          { 
-            label: 'Press Releases', 
-            value: analyticsData.totalReleases.toLocaleString(), 
-            change: analyticsData.releaseGrowth,
-            icon: FaFileAlt, 
-            color: 'green',
-            trend: 'up'
-          },
-          { 
-            label: 'Engagement Rate', 
-            value: `${analyticsData.engagementRate}%`, 
-            change: 5.2,
-            icon: FaHeart, 
-            color: 'pink',
-            trend: 'up'
-          }
-        ].map((stat, index) => (
-          <motion.div
-            key={stat.label}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
-            className="bg-gradient-to-br from-gray-800 to-gray-900 backdrop-blur-lg rounded-2xl p-6 border border-gray-700/50 hover:border-purple-500/30 transition-all duration-300 group hover:scale-105 cursor-pointer"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-400 text-sm font-medium">{stat.label}</p>
-                <p className="text-2xl font-bold text-white mt-2">{stat.value}</p>
-                <div className={`flex items-center mt-1 text-xs ${stat.change >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                  {stat.change >= 0 ? <FaArrowUp size={10} /> : <FaArrowDown size={10} />}
-                  <span className="ml-1">{Math.abs(stat.change)}%</span>
-                  <span className="text-gray-500 ml-1">from last week</span>
-                </div>
-              </div>
-              <div className={`p-3 rounded-xl bg-${stat.color}-500/20 text-${stat.color}-400 group-hover:scale-110 transition-transform duration-300`}>
-                <stat.icon size={20} />
+ // Enhanced Analytics Dashboard Component with Safe Data Access
+const AnalyticsDashboard = () => (
+  <div className="space-y-6">
+    {/* Real-time Metrics Grid */}
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {[
+        { 
+          label: 'Total Users', 
+          value: (analyticsData.totalUsers || 0).toLocaleString(), 
+          change: analyticsData.userGrowth || 0,
+          icon: FaUsers, 
+          color: 'purple',
+          trend: 'up'
+        },
+        { 
+          label: 'Daily Active', 
+          value: (analyticsData.dailyActiveUsers || 0).toLocaleString(), 
+          change: 12.5,
+          icon: FaChartLine, 
+          color: 'blue',
+          trend: 'up'
+        },
+        { 
+          label: 'Press Releases', 
+          value: (analyticsData.totalReleases || 0).toLocaleString(), 
+          change: analyticsData.releaseGrowth || 0,
+          icon: FaFileAlt, 
+          color: 'green',
+          trend: 'up'
+        },
+        { 
+          label: 'Engagement Rate', 
+          value: `${analyticsData.engagementRate || 0}%`, 
+          change: 5.2,
+          icon: FaHeart, 
+          color: 'pink',
+          trend: 'up'
+        }
+      ].map((stat, index) => (
+        <motion.div
+          key={stat.label}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: index * 0.1 }}
+          className="bg-gradient-to-br from-gray-800 to-gray-900 backdrop-blur-lg rounded-2xl p-6 border border-gray-700/50 hover:border-purple-500/30 transition-all duration-300 group hover:scale-105 cursor-pointer"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-400 text-sm font-medium">{stat.label}</p>
+              <p className="text-2xl font-bold text-white mt-2">{stat.value}</p>
+              <div className={`flex items-center mt-1 text-xs ${stat.change >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                {stat.change >= 0 ? <FaArrowUp size={10} /> : <FaArrowDown size={10} />}
+                <span className="ml-1">{Math.abs(stat.change)}%</span>
+                <span className="text-gray-500 ml-1">from last week</span>
               </div>
             </div>
-          </motion.div>
-        ))}
-      </div>
+            <div className={`p-3 rounded-xl bg-${stat.color}-500/20 text-${stat.color}-400 group-hover:scale-110 transition-transform duration-300`}>
+              <stat.icon size={20} />
+            </div>
+          </div>
+        </motion.div>
+      ))}
+    </div>
 
-      {/* Performance Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {[
-          { 
-            label: 'Active Journalists', 
-            value: analyticsData.activeJournalists.toLocaleString(), 
-            change: 8.3,
-            icon: FaUserCheck, 
-            color: 'cyan' 
-          },
-          { 
-            label: 'Pending Approvals', 
-            value: analyticsData.pendingComms.toString(), 
-            change: -2.1,
-            icon: FaUserClock, 
-            color: 'yellow' 
-          },
-          { 
-            label: 'System Health', 
-            value: `${analyticsData.systemHealth}%`, 
-            change: 0.5,
-            icon: FaRocket, 
-            color: 'green' 
-          },
-          { 
-            label: 'Avg. Read Time', 
-            value: analyticsData.avgReadTime, 
-            change: 12.7,
-            icon: FaClock, 
-            color: 'blue' 
-          }
-        ].map((stat, index) => (
-          <motion.div
-            key={stat.label}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: (index + 4) * 0.1 }}
-            className="bg-gradient-to-br from-gray-800 to-gray-900 backdrop-blur-lg rounded-2xl p-6 border border-gray-700/50 hover:border-purple-500/30 transition-all duration-300 group"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-gray-400 text-sm font-medium">{stat.label}</p>
-                <p className="text-2xl font-bold text-white mt-2">{stat.value}</p>
-                <div className={`flex items-center mt-1 text-xs ${stat.change >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                  {stat.change >= 0 ? <FaArrowUp size={10} /> : <FaArrowDown size={10} />}
-                  <span className="ml-1">{Math.abs(stat.change)}%</span>
-                </div>
-              </div>
-              <div className={`p-3 rounded-xl bg-${stat.color}-500/20 text-${stat.color}-400 group-hover:scale-110 transition-transform`}>
-                <stat.icon size={20} />
+    {/* Performance Metrics */}
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {[
+        { 
+          label: 'Active Journalists', 
+          value: (analyticsData.activeJournalists || 0).toLocaleString(), 
+          change: 8.3,
+          icon: FaUserCheck, 
+          color: 'cyan' 
+        },
+        { 
+          label: 'Pending Journalists', 
+          value: (analyticsData.pendingJournalists || 0).toString(), 
+          change: -2.1,
+          icon: FaUserClock, 
+          color: 'yellow' 
+        },
+        { 
+          label: 'System Health', 
+          value: `${analyticsData.systemHealth || 0}%`, 
+          change: 0.5,
+          icon: FaRocket, 
+          color: 'green' 
+        },
+        { 
+          label: 'Avg. Read Time', 
+          value: analyticsData.avgReadTime || '0 min', 
+          change: 12.7,
+          icon: FaClock, 
+          color: 'blue' 
+        }
+      ].map((stat, index) => (
+        <motion.div
+          key={stat.label}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: (index + 4) * 0.1 }}
+          className="bg-gradient-to-br from-gray-800 to-gray-900 backdrop-blur-lg rounded-2xl p-6 border border-gray-700/50 hover:border-purple-500/30 transition-all duration-300 group"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-gray-400 text-sm font-medium">{stat.label}</p>
+              <p className="text-2xl font-bold text-white mt-2">{stat.value}</p>
+              <div className={`flex items-center mt-1 text-xs ${stat.change >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                {stat.change >= 0 ? <FaArrowUp size={10} /> : <FaArrowDown size={10} />}
+                <span className="ml-1">{Math.abs(stat.change)}%</span>
               </div>
             </div>
-          </motion.div>
-        ))}
-      </div>
+            <div className={`p-3 rounded-xl bg-${stat.color}-500/20 text-${stat.color}-400 group-hover:scale-110 transition-transform`}>
+              <stat.icon size={20} />
+            </div>
+          </div>
+        </motion.div>
+      ))}
+    </div>
 
-      {/* Charts and Visualizations */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Top Categories Chart */}
-        <div className="bg-gradient-to-br from-gray-800 to-gray-900 backdrop-blur-lg rounded-2xl p-6 border border-gray-700/50">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-bold text-white flex items-center">
-              <FaChartPie className="mr-2 text-purple-400" />
-              Top Categories Distribution
-            </h3>
-            <button className="text-gray-400 hover:text-white transition-colors">
-              <FaDownload size={16} />
-            </button>
-          </div>
-          <div className="space-y-4">
-            {analyticsData.topCategories.slice(0, 5).map((category, index) => (
-              <div key={category.name} className="flex items-center justify-between p-3 bg-gray-700/30 rounded-lg hover:bg-gray-700/50 transition-all group">
-                <div className="flex items-center space-x-3 flex-1">
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg">
-                    <span className="text-white text-sm font-bold">{index + 1}</span>
-                  </div>
-                  <span className="text-gray-300 font-medium">{category.name}</span>
-                  <div className="flex-1 bg-gray-600 rounded-full h-3 mx-4">
-                    <div 
-                      className="bg-gradient-to-r from-purple-500 to-pink-500 h-3 rounded-full transition-all duration-500" 
-                      style={{ width: `${(category.count / Math.max(...analyticsData.topCategories.map(c => c.count))) * 100}%` }}
-                    ></div>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <span className="text-white font-semibold">{category.count}</span>
-                  <div className="text-green-400 text-xs flex items-center space-x-1">
-                    <FaArrowUp size={8} />
-                    <span>+{Math.floor(Math.random() * 20) + 5}%</span>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+    {/* Charts and Visualizations */}
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* Top Categories Chart */}
+      <div className="bg-gradient-to-br from-gray-800 to-gray-900 backdrop-blur-lg rounded-2xl p-6 border border-gray-700/50">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-lg font-bold text-white flex items-center">
+            <FaChartPie className="mr-2 text-purple-400" />
+            Top Categories Distribution
+          </h3>
+          <button className="text-gray-400 hover:text-white transition-colors">
+            <FaDownload size={16} />
+          </button>
         </div>
-
-        {/* Traffic Sources */}
-        <div className="bg-gradient-to-br from-gray-800 to-gray-900 backdrop-blur-lg rounded-2xl p-6 border border-gray-700/50">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-bold text-white flex items-center">
-              <FaChartBar className="mr-2 text-blue-400" />
-              Traffic Sources
-            </h3>
-            <button className="text-gray-400 hover:text-white transition-colors">
-              <FaFilter size={16} />
-            </button>
-          </div>
-          <div className="space-y-4">
-            {analyticsData.trafficSources.map((source, index) => (
-              <div key={source.source} className="flex items-center justify-between group hover:bg-gray-700/30 p-2 rounded-lg transition-all">
-                <div className="flex items-center space-x-3 flex-1">
-                  <div className={`w-3 h-3 rounded-full ${
-                    index === 0 ? 'bg-blue-500' : 
-                    index === 1 ? 'bg-green-500' : 
-                    index === 2 ? 'bg-purple-500' : 'bg-yellow-500'
-                  }`}></div>
-                  <span className="text-gray-300 font-medium">{source.source}</span>
-                  <div className="flex-1 bg-gray-600 rounded-full h-2 mx-4">
-                    <div 
-                      className="h-2 rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 transition-all duration-500" 
-                      style={{ width: `${source.percentage}%` }}
-                    ></div>
-                  </div>
+        <div className="space-y-4">
+          {(analyticsData.topCategories || []).slice(0, 5).map((category, index) => (
+            <div key={category.name} className="flex items-center justify-between p-3 bg-gray-700/30 rounded-lg hover:bg-gray-700/50 transition-all group">
+              <div className="flex items-center space-x-3 flex-1">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center shadow-lg">
+                  <span className="text-white text-sm font-bold">{index + 1}</span>
                 </div>
-                <span className="text-white font-semibold bg-gray-700/50 px-2 py-1 rounded-lg min-w-12 text-center">
-                  {source.percentage}%
-                </span>
+                <span className="text-gray-300 font-medium">{category.name}</span>
+                <div className="flex-1 bg-gray-600 rounded-full h-3 mx-4">
+                  <div 
+                    className="bg-gradient-to-r from-purple-500 to-pink-500 h-3 rounded-full transition-all duration-500" 
+                    style={{ width: `${(category.count / Math.max(...(analyticsData.topCategories || []).map(c => c.count))) * 100}%` }}
+                  ></div>
+                </div>
               </div>
-            ))}
-          </div>
+              <div className="text-right">
+                <span className="text-white font-semibold">{category.count}</span>
+                <div className="text-green-400 text-xs flex items-center space-x-1">
+                  <FaArrowUp size={8} />
+                  <span>+{Math.floor(Math.random() * 20) + 5}%</span>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </div>
 
-      {/* User Demographics & Top Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* User Demographics */}
-        <div className="bg-gradient-to-br from-gray-800 to-gray-900 backdrop-blur-lg rounded-2xl p-6 border border-gray-700/50">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-bold text-white flex items-center">
-              <FaMapMarkerAlt className="mr-2 text-green-400" />
-              User Demographics
-            </h3>
-            <button className="text-gray-400 hover:text-white transition-colors">
-              <FaDownload size={16} />
-            </button>
-          </div>
-          <div className="space-y-3">
-            {analyticsData.userDemographics.slice(0, 5).map((demo, index) => (
-              <div key={demo._id} className="flex items-center justify-between p-3 bg-gray-700/30 rounded-lg hover:bg-gray-700/50 transition-all">
-                <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-green-500 to-teal-500 flex items-center justify-center">
-                    <span className="text-white text-xs font-bold">{index + 1}</span>
-                  </div>
-                  <span className="text-gray-300 font-medium">{demo._id || 'Unknown'}</span>
-                </div>
-                <div className="text-right">
-                  <span className="text-white font-semibold">{demo.users} users</span>
-                  <div className="text-blue-400 text-xs">
-                    {Math.round((demo.users / analyticsData.totalUsers) * 100)}% of total
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
+      {/* Traffic Sources */}
+      <div className="bg-gradient-to-br from-gray-800 to-gray-900 backdrop-blur-lg rounded-2xl p-6 border border-gray-700/50">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-lg font-bold text-white flex items-center">
+            <FaChartBar className="mr-2 text-blue-400" />
+            Traffic Sources
+          </h3>
+          <button className="text-gray-400 hover:text-white transition-colors">
+            <FaFilter size={16} />
+          </button>
         </div>
-
-        {/* Top Performing Content */}
-        <div className="bg-gradient-to-br from-gray-800 to-gray-900 backdrop-blur-lg rounded-2xl p-6 border border-gray-700/50">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-bold text-white flex items-center">
-              <FaRocket className="mr-2 text-orange-400" />
-              Top Performing Content
-            </h3>
-            <button className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-4 py-2 rounded-xl flex items-center space-x-2 transition-all shadow-lg hover:shadow-purple-500/25">
-              <FaDownload className="text-sm" />
-              <span>Export</span>
-            </button>
-          </div>
-          <div className="space-y-4">
-            {analyticsData.topPerformingReleases.slice(0, 3).map((release, index) => (
-              <div key={release._id} className="flex items-center justify-between p-4 bg-gray-700/30 rounded-xl hover:bg-gray-700/50 transition-all group">
-                <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-lg">
-                    {index + 1}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h4 className="text-white font-medium group-hover:text-purple-300 transition-colors truncate">
-                      {release.headline}
-                    </h4>
-                    <div className="flex items-center space-x-4 mt-2 text-sm text-gray-400">
-                      <div className="flex items-center space-x-1">
-                        <FaViews size={12} />
-                        <span>{(release.views || 0).toLocaleString()}</span>
-                      </div>
-                      <div className="flex items-center space-x-1">
-                        <FaHeart size={12} />
-                        <span>{(release.likes || 0).toLocaleString()}</span>
-                      </div>
-                      <div className="flex items-center space-x-1">
-                        <FaShare size={12} />
-                        <span>{(release.shares || 0).toLocaleString()}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-white font-semibold">{release.readTime}</div>
-                  <div className="text-green-400 text-sm flex items-center justify-end space-x-1">
-                    <FaArrowUp size={10} />
-                    <span>+{Math.floor(Math.random() * 50) + 20}%</span>
-                  </div>
+        <div className="space-y-4">
+          {(analyticsData.trafficSources || []).map((source, index) => (
+            <div key={source.source} className="flex items-center justify-between group hover:bg-gray-700/30 p-2 rounded-lg transition-all">
+              <div className="flex items-center space-x-3 flex-1">
+                <div className={`w-3 h-3 rounded-full ${
+                  index === 0 ? 'bg-blue-500' : 
+                  index === 1 ? 'bg-green-500' : 
+                  index === 2 ? 'bg-purple-500' : 'bg-yellow-500'
+                }`}></div>
+                <span className="text-gray-300 font-medium">{source.source}</span>
+                <div className="flex-1 bg-gray-600 rounded-full h-2 mx-4">
+                  <div 
+                    className="h-2 rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 transition-all duration-500" 
+                    style={{ width: `${source.percentage}%` }}
+                  ></div>
                 </div>
               </div>
-            ))}
-          </div>
+              <span className="text-white font-semibold bg-gray-700/50 px-2 py-1 rounded-lg min-w-12 text-center">
+                {source.percentage}%
+              </span>
+            </div>
+          ))}
         </div>
       </div>
     </div>
-  );
+
+    {/* User Demographics & Top Content */}
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      {/* User Demographics */}
+      <div className="bg-gradient-to-br from-gray-800 to-gray-900 backdrop-blur-lg rounded-2xl p-6 border border-gray-700/50">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-lg font-bold text-white flex items-center">
+            <FaMapMarkerAlt className="mr-2 text-green-400" />
+            User Demographics
+          </h3>
+          <button className="text-gray-400 hover:text-white transition-colors">
+            <FaDownload size={16} />
+          </button>
+        </div>
+        <div className="space-y-3">
+          {(analyticsData.userDemographics || []).slice(0, 5).map((demo, index) => (
+            <div key={demo._id} className="flex items-center justify-between p-3 bg-gray-700/30 rounded-lg hover:bg-gray-700/50 transition-all">
+              <div className="flex items-center space-x-3">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-green-500 to-teal-500 flex items-center justify-center">
+                  <span className="text-white text-xs font-bold">{index + 1}</span>
+                </div>
+                <span className="text-gray-300 font-medium">{demo._id || 'Unknown'}</span>
+              </div>
+              <div className="text-right">
+                <span className="text-white font-semibold">{demo.users} users</span>
+                <div className="text-blue-400 text-xs">
+                  {Math.round((demo.users / (analyticsData.totalUsers || 1)) * 100)}% of total
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Top Performing Content */}
+      <div className="bg-gradient-to-br from-gray-800 to-gray-900 backdrop-blur-lg rounded-2xl p-6 border border-gray-700/50">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-lg font-bold text-white flex items-center">
+            <FaRocket className="mr-2 text-orange-400" />
+            Top Performing Content
+          </h3>
+          <button className="bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white px-4 py-2 rounded-xl flex items-center space-x-2 transition-all shadow-lg hover:shadow-purple-500/25">
+            <FaDownload className="text-sm" />
+            <span>Export</span>
+          </button>
+        </div>
+        <div className="space-y-4">
+          {(analyticsData.topPerformingReleases || []).slice(0, 3).map((release, index) => (
+            <div key={release._id} className="flex items-center justify-between p-4 bg-gray-700/30 rounded-xl hover:bg-gray-700/50 transition-all group">
+              <div className="flex items-center space-x-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center text-white font-bold text-lg shadow-lg">
+                  {index + 1}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h4 className="text-white font-medium group-hover:text-purple-300 transition-colors truncate">
+                    {release.headline}
+                  </h4>
+                  <div className="flex items-center space-x-4 mt-2 text-sm text-gray-400">
+                    <div className="flex items-center space-x-1">
+                      <FaEye size={12} />
+                      <span>{(release.views || 0).toLocaleString()}</span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <FaHeart size={12} />
+                      <span>{(release.likes || 0).toLocaleString()}</span>
+                    </div>
+                    <div className="flex items-center space-x-1">
+                      <FaShare size={12} />
+                      <span>{(release.shares || 0).toLocaleString()}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="text-white font-semibold">{release.readTime}</div>
+                <div className="text-green-400 text-sm flex items-center justify-end space-x-1">
+                  <FaArrowUp size={10} />
+                  <span>+{Math.floor(Math.random() * 50) + 20}%</span>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </div>
+);
 
   // Enhanced Bulk Upload Section
   const UploadsTab = () => (
@@ -1610,7 +1610,7 @@ const AdminDashboard: React.FC = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {[
                   { label: 'Total Users', value: analyticsData.totalUsers.toLocaleString(), icon: FaUsers, color: 'purple' },
-                  { label: 'Pending Approvals', value: analyticsData.pendingComms.toString(), icon: FaUserClock, color: 'yellow' },
+                  { label: 'Pending Approvals', value: analyticsData.pendingJournalists.toString(), icon: FaUserClock, color: 'yellow' },
                   { label: 'Press Releases', value: analyticsData.totalReleases.toLocaleString(), icon: FaFileAlt, color: 'blue' },
                   { label: 'System Health', value: `${analyticsData.systemHealth}%`, icon: FaChartBar, color: 'green' }
                 ].map((stat, index) => (
@@ -1638,7 +1638,7 @@ const AdminDashboard: React.FC = () => {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-2 bg-gradient-to-br from-gray-800 to-gray-900 backdrop-blur-lg rounded-2xl p-6 border border-gray-700/50">
                   <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-bold text-white">Pending Comms Approvals</h3>
+                    <h3 className="text-lg font-bold text-white">Pending Journalist Approvals</h3>
                     <span className="text-sm text-gray-400">{pendingUsers.length} pending</span>
                   </div>
                   <div className="space-y-4">
@@ -1677,7 +1677,7 @@ const AdminDashboard: React.FC = () => {
                       <div className="text-center py-8 text-gray-400">
                         <FaUserCheck className="text-3xl mx-auto mb-2" />
                         <p>No pending approvals</p>
-                        <p className="text-sm">All comms professionals are approved</p>
+                        <p className="text-sm">All Journalists  are approved</p>
                       </div>
                     )}
                   </div>
