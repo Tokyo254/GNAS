@@ -1,19 +1,28 @@
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 
-                     (import.meta.env.DEV ? 'http://localhost:5000' : '');
+// Enhanced environment detection
+const getApiBaseUrl = () => {
+  // Use VITE_API_BASE_URL if provided
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL;
+  }
+  
+  // Auto-detect based on environment
+  if (import.meta.env.DEV) {
+    return 'http://localhost:5000';
+  }
+  
+  // Production fallback - use current domain
+  return window.location.origin;
+};
 
-// Development helper
+const API_BASE_URL = getApiBaseUrl();
 const isDevelopment = import.meta.env.DEV;
 
-// Remove any trailing /api from the base URL since we add it later
-const cleanBaseUrl = API_BASE_URL?.replace(/\/api$/, '') || API_BASE_URL;
-
-if (isDevelopment && !cleanBaseUrl) {
-  console.warn('⚠️ VITE_API_BASE_URL is not defined. Using default: http://localhost:5000');
-}
+// Ensure base URL doesn't have trailing slash
+const cleanBaseUrl = API_BASE_URL.replace(/\/$/, '');
 
 console.log(`🌐 API Base URL: ${cleanBaseUrl}`);
 console.log(`🔧 Environment: ${import.meta.env.MODE}`);
-console.log(`📱 App Name: ${import.meta.env.VITE_APP_NAME}`);
+console.log(`📱 App Name: ${import.meta.env.VITE_APP_NAME || 'GNIAS'}`);
 
 // Generic API response type
 export interface ApiResponse<T = any> {
@@ -23,89 +32,106 @@ export interface ApiResponse<T = any> {
   errors?: Array<{ msg: string; param?: string }>;
 }
 
+// Enhanced API fetch with better error handling
 export const apiFetch = async (url: string, options: RequestInit = {}): Promise<Response> => {
-  let token = localStorage.getItem('token');
+  const token = localStorage.getItem('token');
   
-  // Enhanced logging for development
+  // Ensure URL starts with slash
+  const normalizedUrl = url.startsWith('/') ? url : `/${url}`;
+  const fullUrl = `${cleanBaseUrl}/api${normalizedUrl}`;
+  
   if (isDevelopment) {
-    console.log(`🔄 API Call: ${url}`, { 
+    console.log(`🔄 API Call: ${fullUrl}`, { 
       method: options.method || 'GET',
-      hasToken: !!token,
-      environment: import.meta.env.MODE,
-      baseUrl: cleanBaseUrl
+      hasToken: !!token
     });
   }
   
-  const response = await fetch(`${cleanBaseUrl}/api${url}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': token ? `Bearer ${token}` : '',
-      ...options.headers,
-    },
-  });
-  
-  // Development response logging
-  if (isDevelopment) {
-    console.log(`📨 API Response: ${url}`, {
-      status: response.status,
-      ok: response.ok
+  try {
+    const response = await fetch(fullUrl, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token && { Authorization: `Bearer ${token}` }),
+        ...options.headers,
+      },
     });
-  }
-  
-  // If token is expired, try to refresh it
-  if (response.status === 401) {
-    try {
-      if (isDevelopment) {
-        console.log('🔄 Token expired, attempting refresh...');
-      }
-      
-      // Import the refreshToken function dynamically to avoid circular dependencies
-      const authModule = await import('../context/AuthContext');
-      const refreshed = await authModule.useAuth().refreshToken();
-      
-      if (refreshed) {
-        // Retry the original request with new token
-        token = localStorage.getItem('token');
-        if (isDevelopment) {
-          console.log('✅ Token refreshed, retrying request...');
-        }
-        
-        return fetch(`${cleanBaseUrl}/api${url}`, {
-          ...options,
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`,
-            ...options.headers,
-          },
-        });
-      }
-    } catch (error) {
-      console.error('❌ Token refresh failed:', error);
+    
+    if (isDevelopment) {
+      console.log(`📨 API Response: ${normalizedUrl}`, {
+        status: response.status,
+        ok: response.ok,
+        statusText: response.statusText
+      });
     }
+    
+    // Handle 401 Unauthorized (token expired)
+    if (response.status === 401) {
+      console.warn('🔄 Token expired or invalid');
+      
+      // Clear invalid token
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      
+      // Redirect to login if we're not already there
+      if (!window.location.pathname.includes('/login')) {
+        window.location.href = '/login?session=expired';
+      }
+      
+      throw new Error('Authentication failed. Please log in again.');
+    }
+    
+    return response;
+  } catch (error) {
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      console.error('🚨 Network error - backend may be down');
+      throw new Error('Cannot connect to server. Please check your internet connection and try again.');
+    }
+    throw error;
   }
-  
-  return response;
 };
 
-// Helper function for API calls with enhanced error handling
+// Main API call function
 export const apiCall = async <T = any>(
   url: string, 
   options: RequestInit = {}
 ): Promise<ApiResponse<T>> => {
   try {
     const response = await apiFetch(url, options);
+    
+    // Handle non-JSON responses
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      const text = await response.text();
+      
+      if (isDevelopment) {
+        console.error('❌ Non-JSON response:', {
+          url,
+          status: response.status,
+          preview: text.substring(0, 200)
+        });
+      }
+      
+      // If it's a 404, check if the endpoint exists
+      if (response.status === 404) {
+        throw new Error(`API endpoint not found: ${url}. Please check the server configuration.`);
+      }
+      
+      throw new Error(`Server returned unexpected response: ${response.status} ${response.statusText}`);
+    }
+    
     const data: ApiResponse<T> = await response.json();
     
     if (!response.ok) {
       if (isDevelopment) {
-        console.error('❌ API Error:', {
+        console.error('❌ API Error Response:', {
           url,
           status: response.status,
           error: data
         });
       }
-      throw new Error(data.message || `API request failed with status ${response.status}`);
+      
+      throw new Error(data.message || `Request failed with status ${response.status}`);
     }
     
     if (isDevelopment) {
@@ -114,16 +140,10 @@ export const apiCall = async <T = any>(
     
     return data;
   } catch (error) {
-    console.error('🚨 API call error:', error);
-    
-    // Enhanced error messages for development
-    if (isDevelopment) {
-      console.error('🔍 Error details:', {
-        url,
-        method: options.method,
-        body: options.body
-      });
-    }
+    console.error('🚨 API call failed:', {
+      url,
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
     
     return {
       success: false,
@@ -132,36 +152,44 @@ export const apiCall = async <T = any>(
   }
 };
 
-// Special handling for FormData (file uploads)
+// FormData upload helper
 export const apiFormDataCall = async <T = any>(
   url: string, 
-  formData: FormData
+  formData: FormData,
+  method: string = 'POST'
 ): Promise<ApiResponse<T>> => {
   const token = localStorage.getItem('token');
+  const normalizedUrl = url.startsWith('/') ? url : `/${url}`;
+  const fullUrl = `${cleanBaseUrl}/api${normalizedUrl}`;
   
   if (isDevelopment) {
-    console.log('📤 FormData API Call:', url);
+    console.log('📤 FormData Upload:', fullUrl);
   }
   
   try {
-    const response = await fetch(`${cleanBaseUrl}/api${url}`, {
-      method: 'POST',
+    const response = await fetch(fullUrl, {
+      method,
       headers: {
-        'Authorization': token ? `Bearer ${token}` : '',
-        // Let browser set Content-Type with boundary for FormData
+        ...(token && { Authorization: `Bearer ${token}` }),
+        // Don't set Content-Type - let browser set it with boundary
       },
       body: formData,
     });
     
+    const contentType = response.headers.get('content-type');
+    if (!contentType || !contentType.includes('application/json')) {
+      throw new Error(`Server returned non-JSON response: ${response.status}`);
+    }
+    
     const data: ApiResponse<T> = await response.json();
     
     if (!response.ok) {
-      throw new Error(data.message || 'FormData upload failed');
+      throw new Error(data.message || 'Upload failed');
     }
     
     return data;
   } catch (error) {
-    console.error('FormData API error:', error);
+    console.error('FormData upload failed:', error);
     return {
       success: false,
       message: error instanceof Error ? error.message : 'Upload failed'
@@ -169,23 +197,56 @@ export const apiFormDataCall = async <T = any>(
   }
 };
 
+// Auth service
+export const authService = {
+  login: async (credentials: { email: string; password: string }) => 
+    apiCall('/auth/login', {
+      method: 'POST',
+      body: JSON.stringify(credentials)
+    }),
+  
+  registerJournalist: async (data: any) =>
+    apiCall('/auth/register/journalist', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    }),
+  
+  registerComms: async (data: any) =>
+    apiCall('/auth/register/comms', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    }),
+  
+  getMe: () => apiCall('/auth/me'),
+  
+  verifyEmail: (token: string) =>
+    apiCall('/auth/verify-email', {
+      method: 'POST',
+      body: JSON.stringify({ token })
+    }),
+  
+  forgotPassword: (email: string) =>
+    apiCall('/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email })
+    }),
+  
+  resetPassword: (token: string, password: string, confirmPassword: string) =>
+    apiCall('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ token, password, confirmPassword })
+    })
+};
+
+// Blog service
 export const blogService = {
-  // Get all blog posts with filters
-  async getPosts(params?: {
+  getPosts: async (params?: {
     page?: number;
     limit?: number;
     category?: string;
     featured?: boolean;
     sortBy?: 'latest' | 'popular' | 'trending';
-  }): Promise<ApiResponse<{
-    posts: any[];
-    pagination: {
-      page: number;
-      limit: number;
-      total: number;
-      pages: number;
-    };
-  }>> {
+  }) => {
     const queryParams = new URLSearchParams();
     
     if (params?.page) queryParams.append('page', params.page.toString());
@@ -200,85 +261,77 @@ export const blogService = {
     return apiCall(url);
   },
 
-  // Get single blog post
-  async getPost(id: string): Promise<ApiResponse<any>> {
-    return apiCall(`/blog/posts/${id}`);
-  },
+  getPost: (id: string) => apiCall(`/blog/posts/${id}`),
 
-  // Like/unlike a post
-  async likePost(id: string): Promise<ApiResponse<{
-    likes: number;
-    userLiked: boolean;
-  }>> {
-    return apiCall(`/blog/posts/${id}/like`, {
-      method: 'POST'
-    });
-  },
+  likePost: (id: string) => 
+    apiCall(`/blog/posts/${id}/like`, { method: 'POST' }),
 
-  // Share a post
-  async sharePost(id: string): Promise<ApiResponse<{
-    shares: number;
-  }>> {
-    return apiCall(`/blog/posts/${id}/share`, {
-      method: 'POST'
-    });
-  },
+  sharePost: (id: string) =>
+    apiCall(`/blog/posts/${id}/share`, { method: 'POST' }),
 
-  // Get comments for a post
-  async getComments(postId: string): Promise<ApiResponse<any[]>> {
-    return apiCall(`/blog/posts/${postId}/comments`);
-  },
+  getComments: (postId: string) => 
+    apiCall(`/blog/posts/${postId}/comments`),
 
-  // Add comment
-  async addComment(
-    postId: string, 
-    content: string, 
-    parentComment?: string
-  ): Promise<ApiResponse<any>> {
-    return apiCall(`/blog/posts/${postId}/comments`, {
+  addComment: (postId: string, content: string, parentComment?: string) =>
+    apiCall(`/blog/posts/${postId}/comments`, {
       method: 'POST',
       body: JSON.stringify({ content, parentComment })
-    });
-  },
+    }),
 
-  // Like comment
-  async likeComment(
-    postId: string, 
-    commentId: string
-  ): Promise<ApiResponse<{
-    likes: number;
-    userLiked: boolean;
-  }>> {
-    return apiCall(`/blog/posts/${postId}/comments/${commentId}/like`, {
-      method: 'POST'
-    });
-  },
+  likeComment: (commentId: string) =>
+    apiCall(`/blog/comments/${commentId}/like`, { method: 'POST' }),
 
-  // Report a post
-  async reportPost(
-    postId: string, 
-    reason: string, 
-    details: string
-  ): Promise<ApiResponse> {
-    return apiCall(`/blog/posts/${postId}/report`, {
+  reportPost: (postId: string, reason: string, details: string) =>
+    apiCall(`/blog/posts/${postId}/report`, {
       method: 'POST',
       body: JSON.stringify({ reason, details })
-    });
+    })
+};
+
+// Admin service
+export const adminService = {
+  getAnalytics: () => apiCall('/admin/analytics'),
+  getWhistleblowerMessages: () => apiCall('/admin/whistleblower-messages'),
+  getPendingJournalists: () => apiCall('/admin/journalists/pending'),
+  getPressReleases: () => apiCall('/admin/press-releases'),
+  getUsers: () => apiCall('/admin/users'),
+  
+  approveJournalist: (id: string) =>
+    apiCall(`/admin/journalists/${id}/approve`, { method: 'PUT' }),
+  
+  rejectJournalist: (id: string) =>
+    apiCall(`/admin/journalists/${id}/reject`, { method: 'PUT' }),
+  
+  deleteUser: (id: string) =>
+    apiCall(`/admin/users/${id}`, { method: 'DELETE' }),
+  
+  deletePressRelease: (id: string) =>
+    apiCall(`/admin/press-releases/${id}`, { method: 'DELETE' })
+};
+
+// Bulk upload service
+export const bulkUploadService = {
+  uploadUsers: (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return apiFormDataCall('/admin/bulk-upload/users', formData);
+  },
+
+  uploadPressReleases: (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return apiFormDataCall('/admin/bulk-upload/releases', formData);
   }
 };
 
-// Add to your utils/api.ts
-export const bulkUploadService = {
-  // Bulk upload press releases
-  async uploadPressReleases(file: File): Promise<ApiResponse<{
-    total: number;
-    successful: number;
-    failed: number;
-    errors: string[];
-  }>> {
-    const formData = new FormData();
-    formData.append('csv', file);
-    
-    return apiFormDataCall('/bulk-upload/press-releases', formData);
+// Health check utility
+export const checkServerHealth = async (): Promise<boolean> => {
+  try {
+    const response = await fetch(`${cleanBaseUrl}/health`);
+    const data = await response.json();
+    return data.success === true;
+  } catch (error) {
+    console.error('Health check failed:', error);
+    return false;
   }
 };
