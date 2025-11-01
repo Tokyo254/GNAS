@@ -93,44 +93,43 @@ const CommentSection: React.FC<CommentSectionProps> = ({ postId }) => {
     }
   };
 
-  // Like comment
-  const handleLikeComment = async (commentId: string) => {
-    if (!user) return;
+ // Like comment
+const handleLikeComment = async (commentId: string) => {
+  if (!user) return;
 
-    try {
-      const response = await blogService.likeComment(postId, commentId);
-      
-      if (response.success && response.data) {
-        // Update comment likes in state
-        const updateCommentLikes = (comments: Comment[]): Comment[] => 
-          comments.map(comment => {
-            if (comment._id === commentId) {
-              return {
-                ...comment,
-                likesCount: response.data?.likes ?? comment.likesCount,
-                likes: response.data?.userLiked 
-                  ? [...comment.likes, user.id]
-                  : comment.likes.filter(id => id !== user.id)
-              };
-            }
-            
-            if (comment.replies) {
-              return {
-                ...comment,
-                replies: updateCommentLikes(comment.replies)
-              };
-            }
-            
-            return comment;
-          });
+  try {
+    const response = await blogService.likeComment(commentId);
+    
+    if (response.success && response.data) {
+      // Update comment likes in state
+      const updateCommentLikes = (comments: Comment[]): Comment[] => 
+        comments.map(comment => {
+          if (comment._id === commentId) {
+            return {
+              ...comment,
+              likesCount: response.data?.likes ?? comment.likesCount,
+              likes: response.data?.userLiked 
+                ? [...comment.likes, user.id]
+                : comment.likes.filter(id => id !== user.id)
+            };
+          }
+          
+          if (comment.replies) {
+            return {
+              ...comment,
+              replies: updateCommentLikes(comment.replies)
+            };
+          }
+          
+          return comment;
+        });
 
-        setComments(updateCommentLikes(comments));
-      }
-    } catch (err) {
-      console.error('Error liking comment:', err);
+      setComments(updateCommentLikes(comments));
     }
-  };
-
+  } catch (err) {
+    console.error('Error liking comment:', err);
+  }
+};
   // Handle reply
   const handleReply = (commentId: string, content: string) => {
     handleAddComment(content, commentId);
