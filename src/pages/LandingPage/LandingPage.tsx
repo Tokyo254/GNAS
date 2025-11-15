@@ -8,6 +8,7 @@ import Footer from '../../components/footer';
 import PreferencePreloader from '../../components/Preloader';
 import Feature from './feature';
 import Hero from './hero';
+import BlogHero from './blogHero';
 
 function LandingPage() {
     // 2. State to control the preloader's visibility
@@ -33,6 +34,7 @@ function LandingPage() {
       <Header />
       <main className="flex-grow">
         <Hero />
+        <BlogHero />
         <WriteUp />
         <Content />
         <Feature />

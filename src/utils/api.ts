@@ -238,7 +238,8 @@ export const authService = {
     })
 };
 
-// Blog service
+// Enhanced Blog service with proper typing
+// Enhanced Blog service with proper typing
 export const blogService = {
   getPosts: async (params?: {
     page?: number;
@@ -246,6 +247,7 @@ export const blogService = {
     category?: string;
     featured?: boolean;
     sortBy?: 'latest' | 'popular' | 'trending';
+    status?: string;
   }) => {
     const queryParams = new URLSearchParams();
     
@@ -254,38 +256,171 @@ export const blogService = {
     if (params?.category) queryParams.append('category', params.category);
     if (params?.featured) queryParams.append('featured', 'true');
     if (params?.sortBy) queryParams.append('sortBy', params.sortBy);
+    if (params?.status) queryParams.append('status', params.status);
     
     const queryString = queryParams.toString();
     const url = `/blog/posts${queryString ? `?${queryString}` : ''}`;
     
-    return apiCall(url);
+    return apiCall<{
+      map(arg0: (post: any) => any): unknown;
+      data: Array<{
+        _id: string;
+        headline: string;
+        summary: string;
+        fullContent: string;
+        authorDetails: {
+          _id: string;
+          name: string;
+          title: string;
+          company: string;
+          avatar: string;
+          verified: boolean;
+          bio?: string;
+        };
+        publicationDate: string;
+        readTime: string;
+        categories: string[];
+        tags: string[];
+        featuredImage?: { url: string };
+        views: number;
+        likes: string[];
+        likesCount: number;
+        userLiked: boolean; // Add this field
+        shares: number;
+        slug: string;
+        type?: 'article' | 'press-release';
+      }>;
+      total: number;
+      pagination: {
+        current: number;
+        pages: number;
+        total: number;
+      };
+    }>(url);
   },
-
-  getPost: (id: string) => apiCall(`/blog/posts/${id}`),
+  getAllPosts: async () => {
+    return blogService.getPosts({
+      limit: 1000, 
+      status: 'published',
+      sortBy: 'latest'
+    });
+  },
+  getPost: (id: string) => 
+    apiCall<{
+      _id: string;
+      headline: string;
+      summary: string;
+      fullContent: string;
+      authorDetails: {
+        _id: string;
+        name: string;
+        title: string;
+        company: string;
+        avatar: string;
+        verified: boolean;
+        bio?: string;
+      };
+      publicationDate: string;
+      readTime: string;
+      categories: string[];
+      tags: string[];
+      featuredImage?: { url: string };
+      views: number;
+      likes: string[];
+      likesCount: number;
+      userLiked: boolean; // Add this field
+      shares: number;
+      slug: string;
+      type?: 'article' | 'press-release';
+    }>(`/blog/posts/${id}`),
 
   likePost: (id: string) => 
-    apiCall(`/blog/posts/${id}/like`, { method: 'POST' }),
+    apiCall<{ 
+      likesCount: number; 
+      userLiked: boolean;
+      post: { _id: string; likesCount: number };
+    }>(`/blog/posts/${id}/like`, { method: 'POST' }),
 
   sharePost: (id: string) =>
-    apiCall(`/blog/posts/${id}/share`, { method: 'POST' }),
+    apiCall<{ shares: number }>(`/blog/posts/${id}/share`, { method: 'POST' }),
 
+  // Updated getComments to handle guest comments
   getComments: (postId: string) => 
-    apiCall(`/blog/posts/${postId}/comments`),
+    apiCall<Array<{
+      _id: string;
+      content: string;
+      author?: {
+        _id: string;
+        name: string;
+        avatar: string;
+        verified: boolean;
+        title?: string;
+        company?: string;
+      };
+      guestAuthor?: {
+        name: string;
+        email?: string;
+      };
+      likes: string[];
+      likesCount: number;
+      createdAt: string;
+      replies?: any[];
+      edited?: boolean;
+      isGuestComment?: boolean;
+      isVerifiedAuthor?: boolean;
+      authorName?: string;
+    }>>(`/comments/post/${postId}`),
 
+  // User comment (authenticated)
   addComment: (postId: string, content: string, parentComment?: string) =>
-    apiCall(`/blog/posts/${postId}/comments`, {
+    apiCall(`/comments`, {
       method: 'POST',
-      body: JSON.stringify({ content, parentComment })
+      body: JSON.stringify({ content, postId, parentComment })
+    }),
+
+  // Guest comment (unauthenticated)
+  addGuestComment: (postId: string, content: string, guestName: string, guestEmail?: string, parentComment?: string) =>
+    apiCall(`/comments/guest`, {
+      method: 'POST',
+      body: JSON.stringify({ 
+        content, 
+        postId, 
+        guestName, 
+        guestEmail, 
+        parentComment 
+      })
+    }),
+
+  // Update comment (authenticated users only)
+  updateComment: (commentId: string, content: string) =>
+    apiCall(`/comments/${commentId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ content })
+    }),
+
+  // Delete comment (authenticated users only)
+  deleteComment: (commentId: string) =>
+    apiCall(`/comments/${commentId}`, {
+      method: 'DELETE'
     }),
 
   likeComment: (commentId: string) =>
-    apiCall(`/blog/comments/${commentId}/like`, { method: 'POST' }),
+    apiCall<{ likesCount: number; userLiked: boolean }>(`/comments/${commentId}/like`, { method: 'POST' }),
 
   reportPost: (postId: string, reason: string, details: string) =>
     apiCall(`/blog/posts/${postId}/report`, {
       method: 'POST',
       body: JSON.stringify({ reason, details })
-    })
+    }),
+
+  // New method to get posts for hero section
+  getHeroPosts: async () => {
+    return blogService.getPosts({
+      page: 1,
+      limit: 8,
+      status: 'published'
+    });
+  }
 };
 
 // Admin service
@@ -334,4 +469,15 @@ export const checkServerHealth = async (): Promise<boolean> => {
     console.error('Health check failed:', error);
     return false;
   }
+};
+
+// Utility function to get full image URL
+export const getImageUrl = (imagePath: string | undefined): string => {
+  if (!imagePath) return 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?q=80&w=2070';
+  
+  if (imagePath.startsWith('http')) {
+    return imagePath;
+  }
+  
+  return `${cleanBaseUrl}${imagePath.startsWith('/') ? '' : '/'}${imagePath}`;
 };

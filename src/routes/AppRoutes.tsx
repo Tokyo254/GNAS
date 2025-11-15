@@ -2,6 +2,7 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "../context/AuthContext";
 import { ToastProvider } from '../context/ToastContext';
+import { BlogProvider } from '../context/BlogContext';
 import ToastContainer from '../components/ToastContainer';
 import ProtectedRoute from "../components/ProtectedRoute";
 import LandingPage from "../pages/LandingPage/LandingPage";
@@ -18,12 +19,14 @@ import ResetPassword from "../pages/Auth/ResetPassword";
 import JournalistSignUp from "../pages/Auth/JournalistSignUp";
 import AdminSignUp from "../pages/Auth/AdminSignUp"; 
 import BlogPostPage from "../pages/PressRelease/BlogPage";
+import BlogListPage from "../pages/PressRelease/BlogList";
 
 function AppRoutes() {
   return (
     <BrowserRouter>
       <ToastProvider>
         <AuthProvider>
+          <BlogProvider> 
           <ToastContainer />
           <Routes>
             {/* Public Routes */}
@@ -36,6 +39,7 @@ function AppRoutes() {
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/unauthorized" element={<Unauthorized />} />
+            <Route path="/blog" element={<BlogListPage />} />
             <Route path="/blog/:id" element={<BlogPostPage />} />
 
             
@@ -74,6 +78,7 @@ function AppRoutes() {
             {/* Catch all route - 404 */}
             <Route path="*" element={<NotFound />} />
           </Routes>
+           </BlogProvider>
         </AuthProvider>
       </ToastProvider>
     </BrowserRouter>
