@@ -291,6 +291,7 @@ const BlogHero: React.FC = () => {
 
 
 // Fetch blog posts
+// Fetch blog posts
 useEffect(() => {
   const fetchBlogPosts = async () => {
     try {
@@ -300,8 +301,13 @@ useEffect(() => {
       const response = await blogService.getHeroPosts();
       
       if (response.success && response.data) {
-        // Assert type to resolve mismatch
-        const postsData = response.data as unknown as BlogPost[];
+        // Runtime-safe extraction of array
+        const rawData = response.data;
+        const postsData: BlogPost[] = Array.isArray(rawData)
+          ? rawData
+          : Array.isArray((rawData as any)?.data)
+          ? (rawData as any).data
+          : [];
         
         // Transform the data to ensure it matches our interface
         const transformedPosts = postsData.map(post => ({
