@@ -291,7 +291,6 @@ const BlogHero: React.FC = () => {
 
 
 // Fetch blog posts
-// Fetch blog posts
 useEffect(() => {
   const fetchBlogPosts = async () => {
     try {
@@ -301,16 +300,21 @@ useEffect(() => {
       const response = await blogService.getHeroPosts();
       
       if (response.success && response.data) {
-        // Runtime-safe extraction of array
-        const rawData = response.data;
-        const postsData: BlogPost[] = Array.isArray(rawData)
-          ? rawData
-          : Array.isArray((rawData as any)?.data)
-          ? (rawData as any).data
-          : [];
+        // Assert type to resolve mismatch with proper unknown intermediate
+        const postsData = response.data as unknown;
+        
+        // Check if it's actually an array before mapping
+        if (!Array.isArray(postsData)) {
+          console.error('Expected array but got:', typeof postsData, postsData);
+          setError('Invalid data format received from server');
+          return;
+        }
+
+        // Now we can safely cast to BlogPost[] and map
+        const blogPostsArray = postsData as BlogPost[];
         
         // Transform the data to ensure it matches our interface
-        const transformedPosts = postsData.map(post => ({
+        const transformedPosts = blogPostsArray.map(post => ({
           ...post,
           // Ensure authorDetails has all required fields
           authorDetails: {
