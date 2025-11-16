@@ -291,49 +291,58 @@ const BlogHero: React.FC = () => {
 
 
 // Fetch blog posts
+// Fetch blog posts
 useEffect(() => {
   const fetchBlogPosts = async () => {
     try {
       setLoading(true);
       setError(null);
       
+      // Use the updated getHeroPosts method
       const response = await blogService.getHeroPosts();
       
       if (response.success && response.data) {
-        // Assert type to resolve mismatch with proper unknown intermediate
-        const postsData = response.data as unknown;
+        // Now response.data should be a direct array of posts
+        const postsArray = response.data;
         
-        // Check if it's actually an array before mapping
-        if (!Array.isArray(postsData)) {
-          console.error('Expected array but got:', typeof postsData, postsData);
+        // Validate it's an array
+        if (!Array.isArray(postsArray)) {
+          console.error('Expected array but got:', typeof postsArray, postsArray);
           setError('Invalid data format received from server');
           return;
         }
 
-        // Now we can safely cast to BlogPost[] and map
-        const blogPostsArray = postsData as BlogPost[];
-        
-        // Transform the data to ensure it matches our interface
-        const transformedPosts = blogPostsArray.map(post => ({
-          ...post,
-          // Ensure authorDetails has all required fields
-          authorDetails: {
-            _id: post.authorDetails?._id || 'unknown',
-            name: post.authorDetails?.name || 'Unknown Author',
-            title: post.authorDetails?.title || '',
-            company: post.authorDetails?.company || '',
-            avatar: post.authorDetails?.avatar || '',
-            verified: post.authorDetails?.verified || false
-          },
-          // Ensure we have required arrays
-          categories: post.categories || [],
-          tags: post.tags || [],
-          likes: post.likes || [],
-          // Ensure required numbers
-          views: post.views || 0,
-          likesCount: post.likesCount || 0,
-          shares: post.shares || 0
-        }));
+        // Transform the data to ensure it matches our BlogPost interface
+        const transformedPosts: BlogPost[] = postsArray.map((post: any) => {
+          // Safely extract author information
+          const author = post.authorDetails || {};
+          
+          return {
+            _id: post._id || '',
+            headline: post.headline || 'Untitled',
+            summary: post.summary || '',
+            fullContent: post.fullContent || '',
+            authorDetails: {
+              _id: author._id || 'unknown',
+              name: author.name || 'Unknown Author',
+              title: author.title || '',
+              company: author.company || '',
+              avatar: author.avatar || '',
+              verified: Boolean(author.verified)
+            },
+            publicationDate: post.publicationDate || new Date().toISOString(),
+            readTime: post.readTime || '5 min read',
+            categories: Array.isArray(post.categories) ? post.categories : [],
+            tags: Array.isArray(post.tags) ? post.tags : [],
+            featuredImage: post.featuredImage,
+            views: Number(post.views) || 0,
+            likes: Array.isArray(post.likes) ? post.likes : [],
+            likesCount: Number(post.likesCount) || 0,
+            shares: Number(post.shares) || 0,
+            slug: post.slug || post._id || '',
+            type: post.type || 'article'
+          };
+        });
         
         setBlogPosts(transformedPosts);
       } else {
