@@ -289,52 +289,56 @@ const BlogHero: React.FC = () => {
     { id: 'press-releases', label: 'Press Releases' }
   ];
 
-  // Fetch blog posts
-  useEffect(() => {
-    const fetchBlogPosts = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        
-        const response = await blogService.getHeroPosts();
-        
-        if (response.success && response.data) {
-          // Transform the data to ensure it matches our interface
-          const transformedPosts = response.data.map(post => ({
-            ...post,
-            // Ensure authorDetails has all required fields
-            authorDetails: {
-              _id: post.authorDetails?._id || 'unknown',
-              name: post.authorDetails?.name || 'Unknown Author',
-              title: post.authorDetails?.title || '',
-              company: post.authorDetails?.company || '',
-              avatar: post.authorDetails?.avatar || '',
-              verified: post.authorDetails?.verified || false
-            },
-            // Ensure we have required arrays
-            categories: post.categories || [],
-            tags: post.tags || [],
-            likes: post.likes || [],
-            // Ensure required numbers
-            views: post.views || 0,
-            likesCount: post.likesCount || 0,
-            shares: post.shares || 0
-          }));
-          
-          setBlogPosts(transformedPosts);
-        } else {
-          setError(response.message || 'Failed to load content');
-        }
-      } catch (err) {
-        console.error('Error fetching blog posts:', err);
-        setError('Failed to load content. Please try again later.');
-      } finally {
-        setLoading(false);
-      }
-    };
 
-    fetchBlogPosts();
-  }, []);
+// Fetch blog posts
+useEffect(() => {
+  const fetchBlogPosts = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await blogService.getHeroPosts();
+      
+      if (response.success && response.data) {
+        // Assert type to resolve mismatch
+        const postsData = response.data as unknown as BlogPost[];
+        
+        // Transform the data to ensure it matches our interface
+        const transformedPosts = postsData.map(post => ({
+          ...post,
+          // Ensure authorDetails has all required fields
+          authorDetails: {
+            _id: post.authorDetails?._id || 'unknown',
+            name: post.authorDetails?.name || 'Unknown Author',
+            title: post.authorDetails?.title || '',
+            company: post.authorDetails?.company || '',
+            avatar: post.authorDetails?.avatar || '',
+            verified: post.authorDetails?.verified || false
+          },
+          // Ensure we have required arrays
+          categories: post.categories || [],
+          tags: post.tags || [],
+          likes: post.likes || [],
+          // Ensure required numbers
+          views: post.views || 0,
+          likesCount: post.likesCount || 0,
+          shares: post.shares || 0
+        }));
+        
+        setBlogPosts(transformedPosts);
+      } else {
+        setError(response.message || 'Failed to load content');
+      }
+    } catch (err) {
+      console.error('Error fetching blog posts:', err);
+      setError('Failed to load content. Please try again later.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchBlogPosts();
+}, []);
 
   // Filter posts based on active tab
   const getFilteredPosts = () => {
