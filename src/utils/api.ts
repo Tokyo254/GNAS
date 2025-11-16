@@ -240,6 +240,7 @@ export const authService = {
 
 // Enhanced Blog service with proper typing
 // Enhanced Blog service with proper typing
+// Enhanced Blog service with proper typing
 export const blogService = {
   getPosts: async (params?: {
     page?: number;
@@ -261,43 +262,35 @@ export const blogService = {
     const queryString = queryParams.toString();
     const url = `/blog/posts${queryString ? `?${queryString}` : ''}`;
     
-    return apiCall<{
-      map(arg0: (post: any) => any): unknown;
-      data: Array<{
+    return apiCall<Array<{
+      _id: string;
+      headline: string;
+      summary: string;
+      fullContent: string;
+      authorDetails: {
         _id: string;
-        headline: string;
-        summary: string;
-        fullContent: string;
-        authorDetails: {
-          _id: string;
-          name: string;
-          title: string;
-          company: string;
-          avatar: string;
-          verified: boolean;
-          bio?: string;
-        };
-        publicationDate: string;
-        readTime: string;
-        categories: string[];
-        tags: string[];
-        featuredImage?: { url: string };
-        views: number;
-        likes: string[];
-        likesCount: number;
-        userLiked: boolean; // Add this field
-        shares: number;
-        slug: string;
-        type?: 'article' | 'press-release';
-      }>;
-      total: number;
-      pagination: {
-        current: number;
-        pages: number;
-        total: number;
+        name: string;
+        title: string;
+        company: string;
+        avatar: string;
+        verified: boolean;
+        bio?: string;
       };
-    }>(url);
+      publicationDate: string;
+      readTime: string;
+      categories: string[];
+      tags: string[];
+      featuredImage?: { url: string };
+      views: number;
+      likes: string[];
+      likesCount: number;
+      userLiked: boolean;
+      shares: number;
+      slug: string;
+      type?: 'article' | 'press-release';
+    }>>(url);
   },
+
   getAllPosts: async () => {
     return blogService.getPosts({
       limit: 1000, 
@@ -305,6 +298,7 @@ export const blogService = {
       sortBy: 'latest'
     });
   },
+
   getPost: (id: string) => 
     apiCall<{
       _id: string;
@@ -328,7 +322,7 @@ export const blogService = {
       views: number;
       likes: string[];
       likesCount: number;
-      userLiked: boolean; // Add this field
+      userLiked: boolean;
       shares: number;
       slug: string;
       type?: 'article' | 'press-release';
@@ -344,7 +338,6 @@ export const blogService = {
   sharePost: (id: string) =>
     apiCall<{ shares: number }>(`/blog/posts/${id}/share`, { method: 'POST' }),
 
-  // Updated getComments to handle guest comments
   getComments: (postId: string) => 
     apiCall<Array<{
       _id: string;
@@ -371,14 +364,12 @@ export const blogService = {
       authorName?: string;
     }>>(`/comments/post/${postId}`),
 
-  // User comment (authenticated)
   addComment: (postId: string, content: string, parentComment?: string) =>
     apiCall(`/comments`, {
       method: 'POST',
       body: JSON.stringify({ content, postId, parentComment })
     }),
 
-  // Guest comment (unauthenticated)
   addGuestComment: (postId: string, content: string, guestName: string, guestEmail?: string, parentComment?: string) =>
     apiCall(`/comments/guest`, {
       method: 'POST',
@@ -391,14 +382,12 @@ export const blogService = {
       })
     }),
 
-  // Update comment (authenticated users only)
   updateComment: (commentId: string, content: string) =>
     apiCall(`/comments/${commentId}`, {
       method: 'PUT',
       body: JSON.stringify({ content })
     }),
 
-  // Delete comment (authenticated users only)
   deleteComment: (commentId: string) =>
     apiCall(`/comments/${commentId}`, {
       method: 'DELETE'
@@ -413,12 +402,13 @@ export const blogService = {
       body: JSON.stringify({ reason, details })
     }),
 
-  // New method to get posts for hero section
+  // Updated getHeroPosts to match the new structure
   getHeroPosts: async () => {
     return blogService.getPosts({
       page: 1,
       limit: 8,
-      status: 'published'
+      status: 'published',
+      featured: true
     });
   }
 };
